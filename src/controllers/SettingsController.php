@@ -52,10 +52,10 @@ class SettingsController extends CBController
 			function show_radio_data() {
 				var cit = $('#content_input_type').val();
 				if(cit == 'radio' || cit == 'select') {
-					$('#form-group-dataenum').show();	
+					$('#form-group-dataenum').show();
 				}else{
 					$('#form-group-dataenum').hide();
-				}					
+				}
 			}
 			$('#content_input_type').change(show_radio_data);
 			show_radio_data();
@@ -68,7 +68,8 @@ class SettingsController extends CBController
     {
         $this->cbLoader();
 
-        if (! CRUDBooster::isSuperadmin()) {
+        //if (! CRUDBooster::isSuperadmin()) {
+        if (! CRUDBooster::isView() && $this->global_privilege == false) {
             CRUDBooster::insertLog(cbLang("log_try_view", ['name' => 'Setting', 'module' => 'Setting']));
             CRUDBooster::redirect(CRUDBooster::adminPath(), cbLang('denied_access'));
         }
@@ -98,7 +99,8 @@ class SettingsController extends CBController
     function postSaveSetting()
     {
 
-        if (! CRUDBooster::isSuperadmin()) {
+        if (! CRUDBooster::isUpdate() && $this->global_privilege == false) {
+        //if (! CRUDBooster::isSuperadmin()) {
             CRUDBooster::insertLog(cbLang("log_try_view", ['name' => 'Setting', 'module' => 'Setting']));
             CRUDBooster::redirect(CRUDBooster::adminPath(), cbLang('denied_access'));
         }
@@ -116,7 +118,7 @@ class SettingsController extends CBController
                 if ($set->content_input_type == 'upload_image') {
                     CRUDBooster::valid([$name => 'image|max:10000'], 'view');
                 } else {
-                    CRUDBooster::valid([$name => 'mimes:doc,docx,xls,xlsx,ppt,pptx,pdf,zip,rar|max:20000'], 'view');
+                    CRUDBooster::valid([$name => 'mimes:doc,docx,xls,xlsx,ppt,pptx,pdf,zip,rar,json|max:20000'], 'view');
                 }
 
                 $file = Request::file($name);

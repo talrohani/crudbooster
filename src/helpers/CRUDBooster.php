@@ -11,6 +11,7 @@ use Schema;
 use Session;
 use Storage;
 use Validator;
+use Illuminate\Support\Str;
 
 class CRUDBooster
 {
@@ -97,6 +98,50 @@ class CRUDBooster
         }
     }
 
+    public static function uploadByFile($file, $encrypt = false, $resize_width = null, $resize_height = null, $id = null)
+    {
+        if ($file) {
+            if (! self::myId()) {
+                $userID = 0;
+            } else {
+                $userID = self::myId();
+            }
+
+            if ($id) {
+                $userID = $id;
+            }
+
+            //$file = Request::file($name);
+            $ext = $file->getClientOriginalExtension();
+            $filename = str_slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+            if(method_exists($file, 'getClientSize')) {
+                $filesize = $file->getClientSize() / 1024;
+            } else {
+                $filesize = $file->getSize() / 1024;
+            }
+            $file_path = 'uploads/'.$userID.'/'.date('Y-m');
+
+            //Create Directory Monthly
+            Storage::makeDirectory($file_path);
+
+            if ($encrypt == true) {
+                $filename = md5(str_random(5)).'.'.$ext;
+            } else {
+                $filename = str_slug($filename, '_').'.'.$ext;
+            }
+
+            if (Storage::putFileAs($file_path, $file, $filename)) {
+                self::resizeImage($file_path.'/'.$filename, $resize_width, $resize_height);
+
+                return $file_path.'/'.$filename;
+            } else {
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
+
     private static function resizeImage($fullFilePath, $resize_width = null, $resize_height = null, $qty = 100, $thumbQty = 75)
     {
         $images_ext = config('crudbooster.IMAGE_EXTENSIONS', 'jpg,png,gif,bmp');
@@ -145,14 +190,21 @@ class CRUDBooster
 
     public static function getSetting($name)
     {
-        if (Cache::has('setting_'.$name)) {
+        /*if (Cache::has('setting_'.$name)) {
             return Cache::get('setting_'.$name);
-        }
+        }*/
 
         $query = DB::table('cms_settings')->where('name', $name)->first();
-        Cache::forever('setting_'.$name, $query->content);
+        //Cache::forever('setting_'.$name, $query->content);
 
         return $query->content;
+    }
+
+    public static function setSetting($name, $value)
+    {
+        $query = DB::table('cms_settings')->where('name', $name)->update(['content' => $value]);
+        //Cache::forever('setting_'.$name, $value);
+        return $query ? true : false;
     }
 
     public static function insert($table, $data = [])
@@ -238,7 +290,7 @@ class CRUDBooster
         $roles = Session::get('admin_privileges_roles');
         if ($roles) {
             foreach ($roles as $role) {
-                if ($role->path == CRUDBooster::getModulePath()) {
+                if ($role->path == self::getModulePath()) {
                     return $role;
                 }
             }
@@ -386,6 +438,13 @@ class CRUDBooster
 
             $module = DB::table('cms_moduls')->where('path', self::getModulePath())->first();
 
+            //trans name
+            if($module){
+                $name = str_replace(" ", "_", $module->name);
+                $trans_name = trans('admin.'.($name));
+                if(!Str::startsWith($trans_name,"admin.")) $module->name = $trans_name;
+            }
+
             //supply modulpath instead of $module incase where user decides to create form and custom url that does not exist in cms_moduls table.
             return ($module)?:$modulepath;
         }
@@ -418,7 +477,9 @@ class CRUDBooster
     public static function sidebarDashboard()
     {
 
-        $menu = DB::table('cms_menus')->whereRaw("cms_menus.id IN (select id_cms_menus from cms_menus_privileges where id_cms_privileges = '".self::myPrivilegeId()."')")->where('is_dashboard', 1)->where('is_active', 1)->first();
+        $menu = DB::table('cms_menus')
+        ->whereRaw("cms_menus.id IN (select id_cms_menus from cms_menus_privileges where id_cms_privileges = '".self::myPrivilegeId()."')")
+        ->where('is_dashboard', 1)->where('is_active', 1)->first();
 
         switch ($menu->type) {
             case 'Route':
@@ -444,9 +505,16 @@ class CRUDBooster
 
     public static function sidebarMenu()
     {
-        $menu_active = DB::table('cms_menus')->whereRaw("cms_menus.id IN (select id_cms_menus from cms_menus_privileges where id_cms_privileges = '".self::myPrivilegeId()."')")->where('parent_id', 0)->where('is_active', 1)->where('is_dashboard', 0)->orderby('sorting', 'asc')->select('cms_menus.*')->get();
+        $menu_active = DB::table('cms_menus')
+        //->whereRaw("cms_menus.id IN (select id_cms_menus from cms_menus_privileges where id_cms_privileges = '".self::myPrivilegeId()."')")
+        ->where('parent_id', 0)->where('is_active', 1)->where('is_dashboard', 0)
+        ->orderby('sorting', 'asc')->select('cms_menus.*')->get();
 
         foreach ($menu_active as &$menu) {
+
+            $name = str_replace(" ", "_", $menu->name);
+            $trans_name = trans('admin.'.($name));
+            if(!Str::startsWith($trans_name,"admin.")) $menu->name = $trans_name;
 
             try {
                 switch ($menu->type) {
@@ -475,10 +543,17 @@ class CRUDBooster
             $menu->url = $url;
             $menu->url_path = trim(str_replace(url('/'), '', $url), "/");
 
-            $child = DB::table('cms_menus')->whereRaw("cms_menus.id IN (select id_cms_menus from cms_menus_privileges where id_cms_privileges = '".self::myPrivilegeId()."')")->where('is_dashboard', 0)->where('is_active', 1)->where('parent_id', $menu->id)->select('cms_menus.*')->orderby('sorting', 'asc')->get();
+            $child = DB::table('cms_menus')
+                //->whereRaw("cms_menus.id IN (select id_cms_menus from cms_menus_privileges where id_cms_privileges = '".self::myPrivilegeId()."')")
+                ->where('is_dashboard', 0)->where('is_active', 1)->where('parent_id', $menu->id)
+                ->select('cms_menus.*')->orderby('sorting', 'asc')->get();
             if (count($child)) {
 
                 foreach ($child as &$c) {
+
+                    $name = str_replace(" ", "_", $c->name);
+                    $trans_name = trans('admin.'.($name));
+                    if(!Str::startsWith($trans_name,"admin.")) $c->name = $trans_name;
 
                     try {
                         switch ($c->type) {
@@ -516,15 +591,15 @@ class CRUDBooster
 
     public static function deleteConfirm($redirectTo)
     {
-        echo "swal({   
-				title: \"".cbLang('delete_title_confirm')."\",   
-				text: \"".cbLang('delete_description_confirm')."\",   
-				type: \"warning\",   
-				showCancelButton: true,   
-				confirmButtonColor: \"#ff0000\",   
-				confirmButtonText: \"".cbLang('confirmation_yes')."\",  
-				cancelButtonText: \"".cbLang('confirmation_no')."\",  
-				closeOnConfirm: false }, 
+        echo "swal({
+				title: \"".cbLang('delete_title_confirm')."\",
+				text: \"".cbLang('delete_description_confirm')."\",
+				type: \"warning\",
+				showCancelButton: true,
+				confirmButtonColor: \"#ff0000\",
+				confirmButtonText: \"".cbLang('confirmation_yes')."\",
+				cancelButtonText: \"".cbLang('confirmation_no')."\",
+				closeOnConfirm: false },
 				function(){  location.href=\"$redirectTo\" });";
     }
 
@@ -769,7 +844,7 @@ class CRUDBooster
         $data = $config['data'];
         $template = $config['template'];
 
-        $template = CRUDBooster::first('cms_email_templates', ['slug' => $template]);
+        $template = self::first('cms_email_templates', ['slug' => $template]);
         $html = $template->content;
         foreach ($data as $key => $val) {
             $html = str_replace('['.$key.']', $val, $html);
@@ -782,8 +857,8 @@ class CRUDBooster
             $a = [];
             $a['send_at'] = $config['send_at'];
             $a['email_recipient'] = $to;
-            $a['email_from_email'] = $template->from_email ?: CRUDBooster::getSetting('email_sender');
-            $a['email_from_name'] = $template->from_name ?: CRUDBooster::getSetting('appname');
+            $a['email_from_email'] = $template->from_email ?: self::getSetting('email_sender');
+            $a['email_from_name'] = $template->from_name ?: self::getSetting('appname');
             $a['email_cc_email'] = $template->cc_email;
             $a['email_subject'] = $subject;
             $a['email_content'] = $html;
@@ -799,7 +874,7 @@ class CRUDBooster
             $message->to($to);
 
             if ($template->from_email) {
-                $from_name = ($template->from_name) ?: CRUDBooster::getSetting('appname');
+                $from_name = ($template->from_name) ?: self::getSetting('appname');
                 $message->from($template->from_email, $from_name);
             }
 
@@ -924,7 +999,7 @@ class CRUDBooster
 //         if (self::getCache('table_'.$table, 'primary_key')) {
 //             return self::getCache('table_'.$table, 'primary_key');
 //         }
-//         $table = CRUDBooster::parseSqlTable($table);
+//         $table = self::parseSqlTable($table);
 
 //         if (! $table['table']) {
 //             throw new \Exception("parseSqlTable can't determine the table");
@@ -957,7 +1032,7 @@ class CRUDBooster
 
     public static function newId($table)
     {
-        $key = CRUDBooster::findPrimaryKey($table);
+        $key = self::findPrimaryKey($table);
         $id = DB::table($table)->max($key) + 1;
 
         return $id;
@@ -973,7 +1048,7 @@ class CRUDBooster
             throw new Exception("\$field is empty !", 1);
         }
 
-        $table = CRUDBooster::parseSqlTable($table);
+        $table = self::parseSqlTable($table);
 
         // if(self::getCache('table_'.$table,'column_'.$field)) {
         // 	return self::getCache('table_'.$table,'column_'.$field);
@@ -990,8 +1065,8 @@ class CRUDBooster
 
     public static function getForeignKey($parent_table, $child_table)
     {
-        $parent_table = CRUDBooster::parseSqlTable($parent_table)['table'];
-        $child_table = CRUDBooster::parseSqlTable($child_table)['table'];
+        $parent_table = self::parseSqlTable($parent_table)['table'];
+        $child_table = self::parseSqlTable($child_table)['table'];
         if (Schema::hasColumn($child_table, 'id_'.$parent_table)) {
             return 'id_'.$parent_table;
         } else {
@@ -1065,7 +1140,7 @@ class CRUDBooster
 
     public static function insertLog($description, $details = '')
     {
-        if (CRUDBooster::getSetting('api_debug_mode')) {
+        if (self::getSetting('api_debug_mode')) {
             $a = [];
             $a['created_at'] = date('Y-m-d H:i:s');
             $a['ipaddress'] = $_SERVER['REMOTE_ADDR'];
@@ -1176,7 +1251,7 @@ class CRUDBooster
         $content = $config['content'];
         $to = $config['to'];
         $id_cms_users = $config['id_cms_users'];
-        $id_cms_users = ($id_cms_users) ?: [CRUDBooster::myId()];
+        $id_cms_users = ($id_cms_users) ?: [self::myId()];
         foreach ($id_cms_users as $id) {
             $a = [];
             $a['created_at'] = date('Y-m-d H:i:s');
@@ -1190,13 +1265,180 @@ class CRUDBooster
         return true;
     }
 
-    public static function sendFCM($regID = [], $data)
+    public static function getFcmAccessToken() {
+        $service_account_file = self::getSetting('google_fcm_service_account_file');
+        if (empty($service_account_file)) return "";
+
+        $serviceAccountPath = storage_path('app/'.$service_account_file);
+
+        $client = new \Google_Client();
+        $client->setAuthConfig($serviceAccountPath);
+        $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
+        $client->fetchAccessTokenWithAssertion(); // Updated from useApplicationDefaultCredentials
+        $token = $client->getAccessToken();
+
+        return $token['access_token'] ?? '';
+    }
+
+    public static function sendMessage($accessToken, $projectId, $message) {
+        $url = 'https://fcm.googleapis.com/v1/projects/' . $projectId . '/messages:send';
+        $headers = [
+            'Authorization: Bearer ' . $accessToken,
+            'Content-Type: application/json',
+        ];
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['message' => $message]));
+        $response = curl_exec($ch);
+        if ($response === false) {
+            throw new Exception('Curl error: ' . curl_error($ch));
+        }
+        curl_close($ch);
+        return json_decode($response, true);
+    }
+
+    public static function sendFcmNew($regIDs = [], $data = []) {
+        if (empty($data['title']) || empty($data['content'])) {
+            return 'Title and content are required!';
+        }
+
+        $projectId = self::getSetting('google_fcm_project_id');
+        if (empty($projectId)) return 'Project ID not found!';
+
+        // message payload
+        $message = [
+            'notification' => [
+                'sound' => 'default',
+                'badge' => 0,
+                'title' => trim(strip_tags($data['title'])),
+                'body' => trim(strip_tags($data['content'])),
+            ],
+            'data' => $data, // Optional: additional custom data
+            'tokens' => $regIDs, // Send to multiple registration tokens
+            'android' => [
+                'priority' => 'high',
+            ],
+        ];
+
+        try {
+            // Get access token
+            $accessToken = self::getFcmAccessToken();
+            if (empty($accessToken)) return 'Failed to get access token!';
+
+            // Send message
+            $response = self::sendMessage($accessToken, $projectId, $message);
+            return 'Message sent successfully: ' . print_r($response, true);
+        } catch (Exception $e) {
+            return 'Error: ' . $e->getMessage();
+        }
+    }
+
+
+    public static function sendFCM2($regIDs = [], $data = [])
+    {
+        if (empty($data['title']) || empty($data['content'])) {
+            return 'title and content are required!';
+        }
+
+        $projectId = self::getSetting('google_fcm_project_id');
+        if(empty($projectId)) return 'Project ID not found!';
+
+        //get access token
+        $accessToken = self::getFcmAccessToken(); // Obtain this as shown in Step 1
+        if(empty($accessToken)) return 'Failed to get access token!';
+
+        $url = 'https://fcm.googleapis.com/v1/projects/'.$projectId.'/messages:send';
+
+        $fields = [
+            'message' => [
+                //'token' => $regIDs[0],
+                'registration_ids' => $regIDs,
+                'notification' => [
+                    'title' => trim(strip_tags($data['title'])),
+                    'body' => trim(strip_tags($data['content'])),
+                ],
+                'data' => $data, // Optional: additional custom data
+                'android' => [
+                    'priority' => 'high',
+                ],
+            ],
+        ];
+
+        $headers = [
+            'Authorization: Bearer ' . $accessToken,
+            'Content-Type: application/json',
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            return 'Curl error: ' . $error;
+        }
+
+        return $response;
+    }
+
+
+    public static function sendFCM($regID = [], $data = [])
+    {
+        if (empty($data['title']) || empty($data['content'])) {
+            return 'title, content are required!';
+        }
+
+        $apikey = self::getSetting('google_fcm_key');
+        //$apikey = "AAAAiaiB1CI:APA91bGWUnAw2pIGspEr1OyatnVTZEBLNtmpUmgvsiJyfb6qQkM78wh55EMqqVIN2ZZ8lspLIcEe-MhMtuZAYQmNB2kXc1XdhZO-hENtWm2wKpPzXjeJCSbeilxPhona1p8t4uk8It1j"; // Ensure this is your current Server Key
+        $url = 'https://fcm.googleapis.com/fcm/send';
+
+        $fields = [
+            'registration_ids' => $regID,
+            'notification' => [
+                'title' => trim(strip_tags($data['title'])),
+                'body' => trim(strip_tags($data['content'])),
+            ],
+            'priority' => 'high',
+        ];
+
+        $headers = [
+            'Authorization: key=' . $apikey,
+            'Content-Type: application/json',
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            return 'Curl error: ' . $error;
+        }
+
+        return $response;
+    }
+
+    public static function sendFCMV1($regID = [], $data = [])
     {
         if (! $data['title'] || ! $data['content']) {
             return 'title , content null !';
         }
 
-        $apikey = CRUDBooster::getSetting('google_fcm_key');
+        $apikey = self::getSetting('google_fcm_key');
+        //$apikey = "AAAAiaiB1CI:APA91bGWUnAw2pIGspEr1OyatnVTZEBLNtmpUmgvsiJyfb6qQkM78wh55EMqqVIN2ZZ8lspLIcEe-MhMtuZAYQmNB2kXc1XdhZO-hENtWm2wKpPzXjeJCSbeilxPhona1p8t4uk8It1j";
         $url = 'https://fcm.googleapis.com/fcm/send';
         $fields = [
             'registration_ids' => $regID,
@@ -1231,7 +1473,7 @@ class CRUDBooster
     public static function getTableColumns($table)
     {
         //$cols = DB::getSchemaBuilder()->getColumnListing($table);
-        $table = CRUDBooster::parseSqlTable($table);
+        $table = self::parseSqlTable($table);
         $cols = collect(DB::select('SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = :database AND TABLE_NAME = :table', [
             'database' => $table['database'],
             'table' => $table['table'],
@@ -1298,10 +1540,10 @@ class CRUDBooster
 
 		class Api'.$controller_name.'Controller extends \crocodicstudio\crudbooster\controllers\ApiController {
 
-		    function __construct() {    
-				$this->table       = "'.$table_name.'";        
-				$this->permalink   = "'.$permalink.'";    
-				$this->method_type = "'.$method_type.'";    
+		    function __construct() {
+				$this->table       = "'.$table_name.'";
+				$this->permalink   = "'.$permalink.'";
+				$this->method_type = "'.$method_type.'";
 		    }
 		';
 
@@ -1359,8 +1601,8 @@ class CRUDBooster
             $controllername = str_replace(' ', '', $controllername).'Controller';
         }
 
-        $coloms = CRUDBooster::getTableColumns($table);
-        $name_col = CRUDBooster::getNameTable($coloms);
+        $coloms = self::getTableColumns($table);
+        $name_col = self::getNameTable($coloms);
         $pk = CB::pk($table);
 
         $button_table_action = 'TRUE';
@@ -1388,25 +1630,25 @@ class CRUDBooster
 
 	    public function cbInit() {
 	    	# START CONFIGURATION DO NOT REMOVE THIS LINE
-			$this->table 			   = "'.$table.'";	        
+			$this->table 			   = "'.$table.'";
 			$this->title_field         = "'.$name_col.'";
 			$this->limit               = 20;
 			$this->orderby             = "'.$pk.',desc";
 			$this->show_numbering      = FALSE;
-			$this->global_privilege    = '.$global_privilege.';	        
-			$this->button_table_action = '.$button_table_action.';   
-			$this->button_action_style = "'.$button_action_style.'";     
+			$this->global_privilege    = '.$global_privilege.';
+			$this->button_table_action = '.$button_table_action.';
+			$this->button_action_style = "'.$button_action_style.'";
 			$this->button_add          = '.$button_add.';
 			$this->button_delete       = '.$button_delete.';
 			$this->button_edit         = '.$button_edit.';
 			$this->button_detail       = '.$button_detail.';
 			$this->button_show         = '.$button_show.';
-			$this->button_filter       = '.$button_filter.';        
-			$this->button_export       = '.$button_export.';	        
+			$this->button_filter       = '.$button_filter.';
+			$this->button_export       = '.$button_export.';
 			$this->button_import       = '.$button_import.';
-			$this->button_bulk_action  = '.$button_bulk_action.';	
+			$this->button_bulk_action  = '.$button_bulk_action.';
 			$this->sidebar_mode		   = "normal"; //normal,mini,collapse,collapse-mini
-			# END CONFIGURATION DO NOT REMOVE THIS LINE						      
+			# END CONFIGURATION DO NOT REMOVE THIS LINE
 
 			# START COLUMNS DO NOT REMOVE THIS LINE
 	        $this->col = [];
@@ -1428,13 +1670,13 @@ class CRUDBooster
 
             if (substr($field, 0, 3) == 'id_') {
                 $jointable = str_replace('id_', '', $field);
-                $joincols = CRUDBooster::getTableColumns($jointable);
-                $joinname = CRUDBooster::getNameTable($joincols);
+                $joincols = self::getTableColumns($jointable);
+                $joinname = self::getNameTable($joincols);
                 $php .= "\t\t".'$this->col[] = array("label"=>"'.$label.'","name"=>"'.$field.'","join"=>"'.$jointable.','.$joinname.'");'."\n";
             } elseif (substr($field, -3) == '_id') {
                 $jointable = substr($field, 0, (strlen($field) - 3));
-                $joincols = CRUDBooster::getTableColumns($jointable);
-                $joinname = CRUDBooster::getNameTable($joincols);
+                $joincols = self::getTableColumns($jointable);
+                $joinname = self::getNameTable($joincols);
                 $php .= "\t\t".'$this->col[] = array("label"=>"'.$label.'","name"=>"'.$field.'","join"=>"'.$jointable.','.$joinname.'");'."\n";
             } else {
                 $image = '';
@@ -1465,7 +1707,7 @@ class CRUDBooster
                 continue;
             }
 
-            $typedata = CRUDBooster::getFieldType($table, $field);
+            $typedata = self::getFieldType($table, $field);
 
             switch ($typedata) {
                 default:
@@ -1505,16 +1747,16 @@ class CRUDBooster
 
             if (substr($field, 0, 3) == 'id_') {
                 $jointable = str_replace('id_', '', $field);
-                $joincols = CRUDBooster::getTableColumns($jointable);
-                $joinname = CRUDBooster::getNameTable($joincols);
+                $joincols = self::getTableColumns($jointable);
+                $joinname = self::getNameTable($joincols);
                 $attribute['datatable'] = $jointable.','.$joinname;
                 $type = 'select2';
             }
 
             if (substr($field, -3) == '_id') {
                 $jointable = str_replace('_id', '', $field);
-                $joincols = CRUDBooster::getTableColumns($jointable);
-                $joinname = CRUDBooster::getNameTable($joincols);
+                $joincols = self::getTableColumns($jointable);
+                $joinname = self::getNameTable($joincols);
                 $attribute['datatable'] = $jointable.','.$joinname;
                 $type = 'select2';
             }
@@ -1592,91 +1834,91 @@ class CRUDBooster
 
         $php .= "\n\t\t\t# END FORM DO NOT REMOVE THIS LINE";
 
-        $php .= '     
+        $php .= '
 
-			/* 
-	        | ---------------------------------------------------------------------- 
+			/*
+	        | ----------------------------------------------------------------------
 	        | Sub Module
-	        | ----------------------------------------------------------------------     
-			| @label          = Label of action 
+	        | ----------------------------------------------------------------------
+			| @label          = Label of action
 			| @path           = Path of sub module
 			| @foreign_key 	  = foreign key of sub table/module
 			| @button_color   = Bootstrap Class (primary,success,warning,danger)
-			| @button_icon    = Font Awesome Class  
+			| @button_icon    = Font Awesome Class
 			| @parent_columns = Sparate with comma, e.g : name,created_at
-	        | 
+	        |
 	        */
 	        $this->sub_module = array();
 
 
-	        /* 
-	        | ---------------------------------------------------------------------- 
+	        /*
+	        | ----------------------------------------------------------------------
 	        | Add More Action Button / Menu
-	        | ----------------------------------------------------------------------     
-	        | @label       = Label of action 
+	        | ----------------------------------------------------------------------
+	        | @label       = Label of action
 	        | @url         = Target URL, you can use field alias. e.g : [id], [name], [title], etc
 	        | @icon        = Font awesome class icon. e.g : fa fa-bars
-	        | @color 	   = Default is primary. (primary, warning, succecss, info)     
+	        | @color 	   = Default is primary. (primary, warning, succecss, info)
 	        | @showIf 	   = If condition when action show. Use field alias. e.g : [id] == 1
-	        | 
+	        |
 	        */
 	        $this->addaction = array();
 
 
-	        /* 
-	        | ---------------------------------------------------------------------- 
+	        /*
+	        | ----------------------------------------------------------------------
 	        | Add More Button Selected
-	        | ----------------------------------------------------------------------     
-	        | @label       = Label of action 
+	        | ----------------------------------------------------------------------
+	        | @label       = Label of action
 	        | @icon 	   = Icon from fontawesome
-	        | @name 	   = Name of button 
-	        | Then about the action, you should code at actionButtonSelected method 
-	        | 
+	        | @name 	   = Name of button
+	        | Then about the action, you should code at actionButtonSelected method
+	        |
 	        */
 	        $this->button_selected = array();
 
-	                
-	        /* 
-	        | ---------------------------------------------------------------------- 
+
+	        /*
+	        | ----------------------------------------------------------------------
 	        | Add alert message to this module at overheader
-	        | ----------------------------------------------------------------------     
-	        | @message = Text of message 
-	        | @type    = warning,success,danger,info        
-	        | 
+	        | ----------------------------------------------------------------------
+	        | @message = Text of message
+	        | @type    = warning,success,danger,info
+	        |
 	        */
 	        $this->alert        = array();
-	                
 
-	        
-	        /* 
-	        | ---------------------------------------------------------------------- 
-	        | Add more button to header button 
-	        | ----------------------------------------------------------------------     
-	        | @label = Name of button 
+
+
+	        /*
+	        | ----------------------------------------------------------------------
+	        | Add more button to header button
+	        | ----------------------------------------------------------------------
+	        | @label = Name of button
 	        | @url   = URL Target
 	        | @icon  = Icon from Awesome.
-	        | 
+	        |
 	        */
 	        $this->index_button = array();
 
 
 
-	        /* 
-	        | ---------------------------------------------------------------------- 
-	        | Customize Table Row Color
-	        | ----------------------------------------------------------------------     
-	        | @condition = If condition. You may use field alias. E.g : [id] == 1
-	        | @color = Default is none. You can use bootstrap success,info,warning,danger,primary.        
-	        | 
-	        */
-	        $this->table_row_color = array();     	          
-
-	        
 	        /*
-	        | ---------------------------------------------------------------------- 
-	        | You may use this bellow array to add statistic at dashboard 
-	        | ---------------------------------------------------------------------- 
-	        | @label, @count, @icon, @color 
+	        | ----------------------------------------------------------------------
+	        | Customize Table Row Color
+	        | ----------------------------------------------------------------------
+	        | @condition = If condition. You may use field alias. E.g : [id] == 1
+	        | @color = Default is none. You can use bootstrap success,info,warning,danger,primary.
+	        |
+	        */
+	        $this->table_row_color = array();
+
+
+	        /*
+	        | ----------------------------------------------------------------------
+	        | You may use this bellow array to add statistic at dashboard
+	        | ----------------------------------------------------------------------
+	        | @label, @count, @icon, @color
 	        |
 	        */
 	        $this->index_statistic = array();
@@ -1684,10 +1926,10 @@ class CRUDBooster
 
 
 	        /*
-	        | ---------------------------------------------------------------------- 
-	        | Add javascript at body 
-	        | ---------------------------------------------------------------------- 
-	        | javascript code in the variable 
+	        | ----------------------------------------------------------------------
+	        | Add javascript at body
+	        | ----------------------------------------------------------------------
+	        | javascript code in the variable
 	        | $this->script_js = "function() { ... }";
 	        |
 	        */
@@ -1695,170 +1937,170 @@ class CRUDBooster
 
 
             /*
-	        | ---------------------------------------------------------------------- 
-	        | Include HTML Code before index table 
-	        | ---------------------------------------------------------------------- 
+	        | ----------------------------------------------------------------------
+	        | Include HTML Code before index table
+	        | ----------------------------------------------------------------------
 	        | html code to display it before index table
 	        | $this->pre_index_html = "<p>test</p>";
 	        |
 	        */
 	        $this->pre_index_html = null;
-	        
-	        
-	        
+
+
+
 	        /*
-	        | ---------------------------------------------------------------------- 
-	        | Include HTML Code after index table 
-	        | ---------------------------------------------------------------------- 
+	        | ----------------------------------------------------------------------
+	        | Include HTML Code after index table
+	        | ----------------------------------------------------------------------
 	        | html code to display it after index table
 	        | $this->post_index_html = "<p>test</p>";
 	        |
 	        */
 	        $this->post_index_html = null;
-	        
-	        
-	        
+
+
+
 	        /*
-	        | ---------------------------------------------------------------------- 
-	        | Include Javascript File 
-	        | ---------------------------------------------------------------------- 
-	        | URL of your javascript each array 
+	        | ----------------------------------------------------------------------
+	        | Include Javascript File
+	        | ----------------------------------------------------------------------
+	        | URL of your javascript each array
 	        | $this->load_js[] = asset("myfile.js");
 	        |
 	        */
 	        $this->load_js = array();
-	        
-	        
-	        
+
+
+
 	        /*
-	        | ---------------------------------------------------------------------- 
-	        | Add css style at body 
-	        | ---------------------------------------------------------------------- 
-	        | css code in the variable 
+	        | ----------------------------------------------------------------------
+	        | Add css style at body
+	        | ----------------------------------------------------------------------
+	        | css code in the variable
 	        | $this->style_css = ".style{....}";
 	        |
 	        */
 	        $this->style_css = NULL;
-	        
-	        
-	        
+
+
+
 	        /*
-	        | ---------------------------------------------------------------------- 
-	        | Include css File 
-	        | ---------------------------------------------------------------------- 
-	        | URL of your css each array 
+	        | ----------------------------------------------------------------------
+	        | Include css File
+	        | ----------------------------------------------------------------------
+	        | URL of your css each array
 	        | $this->load_css[] = asset("myfile.css");
 	        |
 	        */
 	        $this->load_css = array();
-	        
-	        
+
+
 	    }
 
 
 	    /*
-	    | ---------------------------------------------------------------------- 
+	    | ----------------------------------------------------------------------
 	    | Hook for button selected
-	    | ---------------------------------------------------------------------- 
+	    | ----------------------------------------------------------------------
 	    | @id_selected = the id selected
 	    | @button_name = the name of button
 	    |
 	    */
 	    public function actionButtonSelected($id_selected,$button_name) {
 	        //Your code here
-	            
+
 	    }
 
 
 	    /*
-	    | ---------------------------------------------------------------------- 
-	    | Hook for manipulate query of index result 
-	    | ---------------------------------------------------------------------- 
-	    | @query = current sql query 
+	    | ----------------------------------------------------------------------
+	    | Hook for manipulate query of index result
+	    | ----------------------------------------------------------------------
+	    | @query = current sql query
 	    |
 	    */
 	    public function hook_query_index(&$query) {
 	        //Your code here
-	            
+
 	    }
 
 	    /*
-	    | ---------------------------------------------------------------------- 
-	    | Hook for manipulate row of index table html 
-	    | ---------------------------------------------------------------------- 
+	    | ----------------------------------------------------------------------
+	    | Hook for manipulate row of index table html
+	    | ----------------------------------------------------------------------
 	    |
-	    */    
-	    public function hook_row_index($column_index,&$column_value) {	        
+	    */
+	    public function hook_row_index($column_index,&$column_value) {
 	    	//Your code here
 	    }
 
 	    /*
-	    | ---------------------------------------------------------------------- 
+	    | ----------------------------------------------------------------------
 	    | Hook for manipulate data input before add data is execute
-	    | ---------------------------------------------------------------------- 
+	    | ----------------------------------------------------------------------
 	    | @arr
 	    |
 	    */
-	    public function hook_before_add(&$postdata) {        
+	    public function hook_before_add(&$postdata) {
 	        //Your code here
 
 	    }
 
-	    /* 
-	    | ---------------------------------------------------------------------- 
-	    | Hook for execute command after add public static function called 
-	    | ---------------------------------------------------------------------- 
+	    /*
+	    | ----------------------------------------------------------------------
+	    | Hook for execute command after add public static function called
+	    | ----------------------------------------------------------------------
 	    | @id = last insert id
-	    | 
+	    |
 	    */
-	    public function hook_after_add($id) {        
+	    public function hook_after_add($id) {
 	        //Your code here
 
 	    }
 
-	    /* 
-	    | ---------------------------------------------------------------------- 
+	    /*
+	    | ----------------------------------------------------------------------
 	    | Hook for manipulate data input before update data is execute
-	    | ---------------------------------------------------------------------- 
-	    | @postdata = input post data 
-	    | @id       = current id 
-	    | 
+	    | ----------------------------------------------------------------------
+	    | @postdata = input post data
+	    | @id       = current id
+	    |
 	    */
-	    public function hook_before_edit(&$postdata,$id) {        
+	    public function hook_before_edit(&$postdata,$id) {
 	        //Your code here
 
 	    }
 
-	    /* 
-	    | ---------------------------------------------------------------------- 
+	    /*
+	    | ----------------------------------------------------------------------
 	    | Hook for execute command after edit public static function called
-	    | ----------------------------------------------------------------------     
-	    | @id       = current id 
-	    | 
+	    | ----------------------------------------------------------------------
+	    | @id       = current id
+	    |
 	    */
 	    public function hook_after_edit($id) {
-	        //Your code here 
+	        //Your code here
 
 	    }
 
-	    /* 
-	    | ---------------------------------------------------------------------- 
+	    /*
+	    | ----------------------------------------------------------------------
 	    | Hook for execute command before delete public static function called
-	    | ----------------------------------------------------------------------     
-	    | @id       = current id 
-	    | 
+	    | ----------------------------------------------------------------------
+	    | @id       = current id
+	    |
 	    */
 	    public function hook_before_delete($id) {
 	        //Your code here
 
 	    }
 
-	    /* 
-	    | ---------------------------------------------------------------------- 
+	    /*
+	    | ----------------------------------------------------------------------
 	    | Hook for execute command after delete public static function called
-	    | ----------------------------------------------------------------------     
-	    | @id       = current id 
-	    | 
+	    | ----------------------------------------------------------------------
+	    | @id       = current id
+	    |
 	    */
 	    public function hook_after_delete($id) {
 	        //Your code here
@@ -1867,7 +2109,7 @@ class CRUDBooster
 
 
 
-	    //By the way, you can still create your own method in here... :) 
+	    //By the way, you can still create your own method in here... :)
 
 
 	}

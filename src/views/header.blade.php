@@ -13,7 +13,11 @@
         <!-- Navbar Right Menu -->
         <div class="navbar-custom-menu">
             <ul class="nav navbar-nav">
-
+                <li class="">
+                    <a href="@if (app()->getLocale()=='ar') {{ route('lang.change', 'en') }} @else {{ route('lang.change', 'ar') }} @endif" title='Change Language' aria-expanded="false">
+                        <span>{{trans('admin.language_name')}}</span>&nbsp;<i class="fa fa-language"></i>&nbsp;
+                    </a>
+                </li>
                 <li class="dropdown notifications-menu">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" title='Notifications' aria-expanded="false">
                         <i id='icon_notification' class="fa fa-bell-o"></i>
@@ -66,7 +70,7 @@
                         <li class="user-footer">
                             <div class="pull-{{ cbLang('left') }}">
                                 <a href="{{ route('AdminCmsUsersControllerGetProfile') }}" class="btn btn-default btn-flat"><i
-                                            class='fa fa-user'></i> {{cbLang("label_button_profile")}}</a>
+                                        class='fa fa-user'></i> {{cbLang("label_button_profile")}}</a>
                             </div>
                             <div class="pull-{{ cbLang('right') }}">
                                 <a title='Lock Screen' href="{{ route('getLockScreen') }}" class='btn btn-default btn-flat'><i class='fa fa-key'></i></a>

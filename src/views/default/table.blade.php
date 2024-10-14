@@ -24,8 +24,7 @@
 
                 swal({
                         title: "{{cbLang("confirmation_title")}}",
-                        text: "{{cbLang("alert_bulk_action_button")}} " + title + " 
-			",
+                        text: "{{cbLang("alert_bulk_action_button")}} " + title + "",
                         type: "warning",
                         showCancelButton: true,
                         confirmButtonColor: "#008D4C",
@@ -49,50 +48,103 @@
 <form id='form-table' method='post' action='{{CRUDBooster::mainpath("action-selected")}}'>
     <input type='hidden' name='button_name' value=''/>
     <input type='hidden' name='_token' value='{{csrf_token()}}'/>
+
+    <?php if(Request::get('grid_view')): ?>
+
+    <div id="grid_view">
+        <div id="table_dashboard" class="list-group">
+            @foreach($html_contents['html'] as $i=>$hc)
+
+                <div class="col-sm-3 connectedSortable">
+                    <div class="border-box">
+                        <div class="small-box bg-green" style="min-height: 150px;">
+                            <div class="inner inner-box">
+                                @foreach($hc as $j=>$h)
+                                    @if(strpos($h, 'checkbox')>0 || strpos($h, 'button_action')>0)
+
+                                    @elseif(strpos($h, 'span')>0)
+                                        <div class="inline" style="margin-left: 5px;">{!! $h !!}</div>
+                                    @elseif($columns[$j-1]['name']=='created_at' || $columns[$j-1]['name']=='user_id')
+                                        <div style="text-align: end"><small>{{$columns[$j-1]['label']}}: {!! $h !!}</small></div>
+                                    @elseif($h)
+                                        @if($columns[$j-1]['name']=='name')
+                                            <p class="group inner list-group-item-heading">
+                                            <h4 class="no-margin">{!! $h !!}</h4>
+                                            </p>
+                                        @elseif($columns[$j-1]['name']=='number')
+                                            <b class="no-margin pull-right">{!! $h !!}</b>
+                                        @else
+                                            <p class="group inner list-group-item-heading">
+                                                <small style="display: none">{{$columns[$j-1]['label']}}:</small>
+                                            <h5 class="no-margin">{!! $h !!}</h5>
+                                            </p>
+                                        @endif
+                                    @endif
+                                @endforeach
+                            </div>
+                            <div class="small-box-footer" style="padding: 5px; position: absolute; bottom: 0px; width: 100%">
+                                <span class="pull-left">{!! $hc[0] !!}</span>
+                                <span>{!! $hc[count($hc)-1] !!}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            @endforeach
+            @if(count($result)==0)
+                <h5 class='warning' style="text-align: center">
+                    <i class='fa fa-search'></i> {{cbLang("table_data_not_found")}}
+                </h5>
+            @endif
+        </div>
+    </div>
+
+    <?php else:?>
+
     <table id='table_dashboard' class="table table-hover table-striped table-bordered">
         <thead>
         <tr class="active">
-            <?php if($button_bulk_action):?>
+                <?php if($button_bulk_action):?>
             <th width='3%'><input type='checkbox' id='checkall'/></th>
             <?php endif;?>
-            <?php if($show_numbering):?>
+                <?php if($show_numbering):?>
             <th width="1%">{{ cbLang('no') }}</th>
             <?php endif;?>
-            <?php
-            foreach ($columns as $col) {
-                if ($col['visible'] === FALSE) continue;
+                <?php
+                foreach ($columns as $col) {
+                    if ($col['visible'] === FALSE) continue;
 
-                $sort_column = Request::get('filter_column');
-                $colname = $col['label'];
-                $name = $col['name'];
-                $field = $col['field_with'];
-                $width = (isset($col['width'])) ?$col['width']: "auto";
-		$style = (isset($col['style'])) ?$col['style']: "";
-                $mainpath = trim(CRUDBooster::mainpath(), '/').$build_query;
-                echo "<th width='$width' $style>";
-                if (isset($sort_column[$field])) {
-                    switch ($sort_column[$field]['sorting']) {
-                        case 'asc':
-                            $url = CRUDBooster::urlFilterColumn($field, 'sorting', 'desc');
-                            echo "<a href='$url' title='Click to sort descending'>$colname &nbsp; <i class='fa fa-sort-desc'></i></a>";
-                            break;
-                        case 'desc':
-                            $url = CRUDBooster::urlFilterColumn($field, 'sorting', 'asc');
-                            echo "<a href='$url' title='Click to sort ascending'>$colname &nbsp; <i class='fa fa-sort-asc'></i></a>";
-                            break;
-                        default:
-                            $url = CRUDBooster::urlFilterColumn($field, 'sorting', 'asc');
-                            echo "<a href='$url' title='Click to sort ascending'>$colname &nbsp; <i class='fa fa-sort'></i></a>";
-                            break;
+                    $sort_column = Request::get('filter_column');
+                    $colname = $col['label'];
+                    $name = $col['name'];
+                    $field = $col['field_with'];
+                    $width = (isset($col['width'])) ?$col['width']: "auto";
+                    $style = (isset($col['style'])) ?$col['style']: "";
+                    $mainpath = trim(CRUDBooster::mainpath(), '/').$build_query;
+                    echo "<th width='$width' $style>";
+                    if (isset($sort_column[$field])) {
+                        switch ($sort_column[$field]['sorting']) {
+                            case 'asc':
+                                $url = CRUDBooster::urlFilterColumn($field, 'sorting', 'desc');
+                                echo "<a href='$url' title='Click to sort descending'>$colname &nbsp; <i class='fa fa-sort-desc'></i></a>";
+                                break;
+                            case 'desc':
+                                $url = CRUDBooster::urlFilterColumn($field, 'sorting', 'asc');
+                                echo "<a href='$url' title='Click to sort ascending'>$colname &nbsp; <i class='fa fa-sort-asc'></i></a>";
+                                break;
+                            default:
+                                $url = CRUDBooster::urlFilterColumn($field, 'sorting', 'asc');
+                                echo "<a href='$url' title='Click to sort ascending'>$colname &nbsp; <i class='fa fa-sort'></i></a>";
+                                break;
+                        }
+                    } else {
+                        $url = CRUDBooster::urlFilterColumn($field, 'sorting', 'asc');
+                        echo "<a href='$url' title='Click to sort ascending'>$colname &nbsp; <i class='fa fa-sort'></i></a>";
                     }
-                } else {
-                    $url = CRUDBooster::urlFilterColumn($field, 'sorting', 'asc');
-                    echo "<a href='$url' title='Click to sort ascending'>$colname &nbsp; <i class='fa fa-sort'></i></a>";
-                }
 
-                echo "</th>";
-            }
-            ?>
+                    echo "</th>";
+                }
+                ?>
 
             @if($button_table_action)
                 @if(CRUDBooster::isUpdate() || CRUDBooster::isDelete() || CRUDBooster::isRead())
@@ -104,14 +156,13 @@
         <tbody>
         @if(count($result)==0)
             <tr class='warning'>
-                <?php if($button_bulk_action && $show_numbering):?>
+                    <?php if($button_bulk_action && $show_numbering):?>
                 <td colspan='{{count($columns)+3}}' align="center">
                 <?php elseif( ($button_bulk_action && ! $show_numbering) || (! $button_bulk_action && $show_numbering) ):?>
                 <td colspan='{{count($columns)+2}}' align="center">
                 <?php else:?>
                 <td colspan='{{count($columns)+1}}' align="center">
                     <?php endif;?>
-
                     <i class='fa fa-search'></i> {{cbLang("table_data_not_found")}}
                 </td>
             </tr>
@@ -120,28 +171,29 @@
         @foreach($html_contents['html'] as $i=>$hc)
 
             @if($table_row_color)
-                <?php $tr_color = NULL;?>
+                    <?php $tr_color = NULL;?>
                 @foreach($table_row_color as $trc)
-                    <?php
-                    $query = $trc['condition'];
-                    $color = $trc['color'];
-                    $row = $html_contents['data'][$i];
-                    foreach ($row as $key => $val) {
-                        $query = str_replace("[".$key."]", '"'.$val.'"', $query);
-                    }
+                        <?php
+                        $query = $trc['condition'];
+                        $color = $trc['color'];
+                        $row = $html_contents['data'][$i];
+                        foreach ($row as $key => $val) {
+                            $query = str_replace("[".$key."]", '"'.$val.'"', $query);
+                        }
+                        //echo $query;
 
-                    @eval("if($query) {
+                        @eval("if($query) {
                                       \$tr_color = \$color;
                                   }");
-                    ?>
+                        ?>
                 @endforeach
-                <?php echo "<tr class='$tr_color'>";?>
+                    <?php echo "<tr class='$tr_color'>";?>
             @else
                 <tr>
                     @endif
 
                     @foreach($hc as $j=>$h)
-                        <td {{ $columns[$j]['style'] or ''}}>{!! $h !!}</td>
+                        <td {{ $columns[$j-1]['style'] ?? ''}}>{!! $h !!}</td>
                     @endforeach
                 </tr>
                 @endforeach
@@ -150,23 +202,23 @@
 
         <tfoot>
         <tr>
-            <?php if($button_bulk_action):?>
+                <?php if($button_bulk_action):?>
             <th>&nbsp;</th>
             <?php endif;?>
 
-            <?php if($show_numbering):?>
+                <?php if($show_numbering):?>
             <th>&nbsp;</th>
             <?php endif;?>
 
-            <?php
-            foreach ($columns as $col) {
-                if ($col['visible'] === FALSE) continue;
-                $colname = $col['label'];
-                $width = (isset($col['width'])) ?$col['width']: "auto";
-		$style = (isset($col['style'])) ? $col['style']: "";
-                echo "<th width='$width' $style>$colname</th>";
-            }
-            ?>
+                <?php
+                foreach ($columns as $col) {
+                    if ($col['visible'] === FALSE) continue;
+                    $colname = $col['label'];
+                    $width = (isset($col['width'])) ?$col['width']: "auto";
+                    $style = (isset($col['style'])) ? $col['style']: "";
+                    echo "<th width='$width' $style>$colname</th>";
+                }
+                ?>
 
             @if($button_table_action)
                 @if(CRUDBooster::isUpdate() || CRUDBooster::isDelete() || CRUDBooster::isRead())
@@ -177,16 +229,21 @@
         </tfoot>
     </table>
 
+    <?php endif;?>
+
 </form><!--END FORM TABLE-->
 
+<p class="col-md-12">
 <div class="col-md-8">{!! urldecode(str_replace("/?","?",$result->appends(Request::all())->render())) !!}</div>
 <?php
 $from = $result->count() ? ($result->perPage() * $result->currentPage() - $result->perPage() + 1) : 0;
 $to = $result->perPage() * $result->currentPage() - $result->perPage() + $result->count();
 $total = $result->total();
 ?>
-<div class="col-md-4"><span class="pull-right">{{ cbLang("filter_rows_total") }}
-        : {{ $from }} {{ cbLang("filter_rows_to") }} {{ $to }} {{ cbLang("filter_rows_of") }} {{ $total }}</span></div>
+<div class="col-md-4"><span class="pull-right">
+            {{ cbLang("filter_rows_total") }}: {{ $from }} {{ cbLang("filter_rows_to") }} {{ $to }} {{ cbLang("filter_rows_of") }} {{ $total }}</span>
+</div>
+</p>
 
 @if($columns)
     @push('bottom')
@@ -311,8 +368,8 @@ $total = $result->total();
                     </div>
                     <form method='get' action=''>
                         <div class="modal-body">
-                            <?php foreach($columns as $key => $col):?>
-                            <?php if (isset($col['image']) || isset($col['download']) || $col['visible'] === FALSE) continue;?>
+                                <?php foreach($columns as $key => $col):?>
+                                <?php if (isset($col['image']) || isset($col['download']) || $col['visible'] === FALSE) continue;?>
 
                             <div class='form-group'>
 
@@ -366,13 +423,13 @@ $total = $result->total();
                                                 <div class='input-group {{ ($col["type_data"] == "time")?"bootstrap-timepicker":"" }}'>
                                                     <span class="input-group-addon">{{cbLang("filter_from")}}:</span>
                                                     <input
-                                                            {{ (CRUDBooster::getTypeFilter($col["field_with"]) != 'between')?"disabled":"" }}
-                                                            type='text'
-                                                            class='filter-value-between form-control {{ in_array($col["type_data"],["date","datetime","timestamp"]) ? "datepicker" : ((in_array($col["type_data"],["time"])) ? "timepicker" : "") }}'
-                                                            {{ in_array($col["type_data"],["date","datetime","timestamp","time"]) ? "readonly" : "" }}
-                                                            placeholder='{{$col["label"]}} {{cbLang("filter_from")}}'
-                                                            name='filter_column[{{$col["field_with"]}}][value][]' 
-                                                            value='<?php
+                                                        {{ (CRUDBooster::getTypeFilter($col["field_with"]) != 'between')?"disabled":"" }}
+                                                        type='text'
+                                                        class='filter-value-between form-control {{ in_array($col["type_data"],["date","datetime","timestamp"]) ? "datepicker" : ((in_array($col["type_data"],["time"])) ? "timepicker" : "") }}'
+                                                        {{ in_array($col["type_data"],["date","datetime","timestamp","time"]) ? "readonly" : "" }}
+                                                        placeholder='{{$col["label"]}} {{cbLang("filter_from")}}'
+                                                        name='filter_column[{{$col["field_with"]}}][value][]'
+                                                        value='<?php
                                                                 $value = CRUDBooster::getValueFilter($col["field_with"]);
                                                                 echo (CRUDBooster::getTypeFilter($col["field_with"]) == 'between') ? $value[0] : "";
                                                             ?>'>
@@ -382,13 +439,13 @@ $total = $result->total();
                                                 <div class='input-group {{ ($col["type_data"] == "time")?"bootstrap-timepicker":"" }}'>
                                                     <span class="input-group-addon">{{cbLang("filter_to")}}:</span>
                                                     <input
-                                                            {{ (CRUDBooster::getTypeFilter($col["field_with"]) != 'between')?"disabled":"" }}
-                                                            type='text'
-                                                            class='filter-value-between form-control {{ in_array($col["type_data"],["date","datetime","timestamp"]) ? "datepicker" : (in_array($col["type_data"],["time"]) ? "timepicker" : "" )}}'
-                                                            {{ in_array($col["type_data"],["date","datetime","timestamp","time"]) ? "readonly": "" }}
-                                                            placeholder='{{$col["label"]}} {{cbLang("filter_to")}}'
-                                                            name='filter_column[{{$col["field_with"]}}][value][]'
-                                                            value='<?php
+                                                        {{ (CRUDBooster::getTypeFilter($col["field_with"]) != 'between')?"disabled":"" }}
+                                                        type='text'
+                                                        class='filter-value-between form-control {{ in_array($col["type_data"],["date","datetime","timestamp"]) ? "datepicker" : (in_array($col["type_data"],["time"]) ? "timepicker" : "" )}}'
+                                                        {{ in_array($col["type_data"],["date","datetime","timestamp","time"]) ? "readonly": "" }}
+                                                        placeholder='{{$col["label"]}} {{cbLang("filter_to")}}'
+                                                        name='filter_column[{{$col["field_with"]}}][value][]'
+                                                        value='<?php
                                                                 $value = CRUDBooster::getValueFilter($col["field_with"]);
                                                                 echo (CRUDBooster::getTypeFilter($col["field_with"]) == 'between') ? $value[1] : "";
                                                             ?>'>
@@ -500,7 +557,7 @@ $total = $result->total();
                             </div>
 
                             <p><a href='javascript:void(0)' class='toggle_advanced_report'><i
-                                            class='fa fa-plus-square-o'></i> {{cbLang("export_dialog_show_advanced")}}</a></p>
+                                        class='fa fa-plus-square-o'></i> {{cbLang("export_dialog_show_advanced")}}</a></p>
 
                             <div id='advanced_export' style='display: none'>
 
@@ -511,15 +568,15 @@ $total = $result->total();
                                         <option <?=($setting->default_paper_size == 'Letter') ? "selected" : ""?> value='Letter'>Letter</option>
                                         <option <?=($setting->default_paper_size == 'Legal') ? "selected" : ""?> value='Legal'>Legal</option>
                                         <option <?=($setting->default_paper_size == 'Ledger') ? "selected" : ""?> value='Ledger'>Ledger</option>
-                                        <?php for($i = 0;$i <= 8;$i++):
-                                        $select = ($setting->default_paper_size == 'A'.$i) ? "selected" : "";
-                                        ?>
+                                            <?php for($i = 0;$i <= 8;$i++):
+                                            $select = ($setting->default_paper_size == 'A'.$i) ? "selected" : "";
+                                            ?>
                                         <option <?=$select?> value='A{{$i}}'>A{{$i}}</option>
                                         <?php endfor;?>
 
-                                        <?php for($i = 0;$i <= 10;$i++):
-                                        $select = ($setting->default_paper_size == 'B'.$i) ? "selected" : "";
-                                        ?>
+                                            <?php for($i = 0;$i <= 10;$i++):
+                                            $select = ($setting->default_paper_size == 'B'.$i) ? "selected" : "";
+                                            ?>
                                         <option <?=$select?> value='B{{$i}}'>B{{$i}}</option>
                                         <?php endfor;?>
                                     </select>

@@ -10,7 +10,11 @@
                     <thead>
                     <tr>
                         @foreach($form['columns'] as $col)
-                            <th>{{$col['label']}}</th>
+                            <?php if ($col['type'] == 'hidden' || $col['type'] == 'password'){ ?>
+                                <th>&nbsp;</th>
+                            <?php }else{ ?>
+                                <th>{{$col['label']}}</th>
+                            <?php } ?>
                         @endforeach
 
                     </tr>
@@ -26,8 +30,9 @@
                         if ($c['type'] == 'datamodal') {
                             $datamodal_title = explode(',', $c['datamodal_columns'])[0];
                             $datamodal_table = $c['datamodal_table'];
-                            $data_child->join($c['datamodal_table'], $c['datamodal_table'].'.id', '=', $c['name']);
-                            $data_child->addselect($c['datamodal_table'].'.'.$datamodal_title.' as '.$datamodal_table.'_'.$datamodal_title);
+                            if(Str::startsWith($datamodal_table,'vw')) $datamodal_table = 'tb'.substr($datamodal_table,2);
+                            $data_child->join($datamodal_table, $datamodal_table.'.id', '=', $c['name']);
+                            $data_child->addselect($datamodal_table.'.'.$datamodal_title.' as '.$datamodal_table.'_'.$datamodal_title);
                         } elseif ($c['type'] == 'select') {
                             if ($c['datatable']) {
                                 $join_table = explode(',', $c['datatable'])[0];
@@ -63,6 +68,7 @@
                                 } elseif ($col['type'] == 'datamodal') {
                                     $datamodal_title = explode(',', $col['datamodal_columns'])[0];
                                     $datamodal_table = $col['datamodal_table'];
+                                    if(Str::startsWith($datamodal_table,'vw')) $datamodal_table = 'tb'.substr($datamodal_table,2);
                                     echo "<span class='td-label'>";
                                     echo $d->{$datamodal_table.'_'.$datamodal_title};
                                     echo "</span>";
@@ -76,6 +82,8 @@
                                         echo "<a data-label='$filename' href='".asset($d->{$col['name']})."'>$filename</a>";
                                         echo "<input type='hidden' name='".$name."-".$col['name']."[]' value='".$d->{$col['name']}."'/>";
                                     }
+                                } elseif ($col['type'] == 'hidden' || $col['type'] == 'password') {
+                                    echo "<input type='hidden' name='".$name."-".$col['name']."[]' value='".$d->{$col['name']}."'/>";
                                 } else {
                                     echo "<span class='td-label'>";
                                     echo $d->{$col['name']};

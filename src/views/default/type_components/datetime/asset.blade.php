@@ -6,7 +6,7 @@
 
     <script type="text/javascript">
         var lang = '{{App::getLocale()}}';
-        moment.locale(lang);
+        moment.locale('en');
         $(function() {
             $('.input_datetime').daterangepicker({
                 singleDatePicker: true,

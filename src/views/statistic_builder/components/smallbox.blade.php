@@ -9,7 +9,7 @@
             <div class="icon">
                 <i class="ion [icon]"></i>
             </div>
-            <a href="[link]" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+            <a href="[link]" class="small-box-footer">OPEN <i class="fa fa-arrow-circle-right"></i></a>
         </div>
 
         <div class='action pull-right'>
@@ -18,6 +18,7 @@
             <a href='javascript:void(0)' data-componentid='{{$componentID}}' class='btn-delete-component'><i class='fa fa-trash'></i></a>
         </div>
     </div>
+
 @elseif($command=='configuration')
     <form method='post'>
         <input type='hidden' name='_token' value='{{csrf_token()}}'/>
@@ -74,4 +75,4 @@
     }
 
     ?>
-@endif	
+@endif

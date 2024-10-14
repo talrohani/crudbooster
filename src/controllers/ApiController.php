@@ -34,6 +34,11 @@ class ApiController extends Controller
 
     }
 
+    public function hook_before_validation(&$postdata)
+    {
+
+    }
+
     public function hook_after($postdata, &$result)
     {
 
@@ -64,6 +69,13 @@ class ApiController extends Controller
         $posts_values = array_values($posts);
 
         $row_api = DB::table('cms_apicustom')->where('permalink', $this->permalink)->first();
+
+        if (! $row_api) {
+            $result['api_status'] = 0;
+            $result['api_message'] = 'Sorry this API endpoint is no longer available or has been changed. Please make sure endpoint is correct.';
+
+            goto show;
+        }
 
         $action_type = $row_api->aksi;
         $table = $row_api->tabel;
@@ -102,6 +114,11 @@ class ApiController extends Controller
 
         @$parameters = unserialize($row_api->parameters);
         @$responses = unserialize($row_api->responses);
+
+        $this->hook_before_validation($posts);
+        if($this->output) {
+            return response()->json($this->output);
+        }
 
         /*
         | ----------------------------------------------
@@ -155,6 +172,10 @@ class ApiController extends Controller
                     $table_exist = $config[0];
                     $table_exist = CRUDBooster::parseSqlTable($table_exist)['table'];
                     $field_exist = $config[1];
+                    if($config[2] && $config[2] == 'id' && $parameters[0]['name'] == 'id'){
+                        $id = $posts[$parameters[0]['name']];
+                        $field_exist = $field_exist.','.$id;
+                    }
                     $config = ($field_exist) ? $table_exist.','.$field_exist : $table_exist;
                     $format_validation[] = 'unique:'.$config;
                 } elseif ($type == 'date_format') {
@@ -519,7 +540,9 @@ class ApiController extends Controller
                 $value = $posts[$name];
                 if ($used == '1' && $value == '') {
                     unset($row_assign[$name]);
-                }
+                } /*else if (!CRUDBooster::isColumnExists($table, $name)) {
+                    unset($row_assign[$name]);
+                }*/
             }
 
             if ($action_type == 'save_add') {
@@ -638,7 +661,8 @@ class ApiController extends Controller
         if($this->output) return response()->json($this->output);
 
         if($output == 'JSON') {
-            return response()->json($result, 200);
+            //\Log::info(json_encode($result, JSON_UNESCAPED_UNICODE));
+            return response()->json($result, 200, [], JSON_UNESCAPED_UNICODE);
         }else{
             return $result;
         }

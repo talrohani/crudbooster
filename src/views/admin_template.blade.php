@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html>
+@if (app()->getLocale()=='ar')
+    <html dir="rtl" lang="ar">
+@else
+    <html lang="en">
+@endif
 <head>
     <meta charset="UTF-8">
     <title>{{ ($page_title)?get_setting('appname').': '.strip_tags($page_title):"Admin Area" }}</title>
@@ -15,14 +19,18 @@
     <link href="{{asset("vendor/crudbooster/assets/adminlte/font-awesome/css")}}/font-awesome.min.css" rel="stylesheet" type="text/css"/>
     <!-- Ionicons -->
     <link href="{{asset("vendor/crudbooster/ionic/css/ionicons.min.css")}}" rel="stylesheet" type="text/css"/>
-    <!-- Theme style -->
-    <link href="{{ asset("vendor/crudbooster/assets/adminlte/dist/css/AdminLTE.min.css")}}" rel="stylesheet" type="text/css"/>
-    <link href="{{ asset("vendor/crudbooster/assets/adminlte/dist/css/skins/_all-skins.min.css")}}" rel="stylesheet" type="text/css"/>
 
     <!-- support rtl-->
     @if (in_array(App::getLocale(), ['ar', 'fa']))
         <link rel="stylesheet" href="//cdn.rawgit.com/morteza/bootstrap-rtl/v3.3.4/dist/css/bootstrap-rtl.min.css">
         <link href="{{ asset("vendor/crudbooster/assets/rtl.css")}}" rel="stylesheet" type="text/css"/>
+        <!-- Theme style -->
+        <link href="{{ asset("vendor/crudbooster/assets/adminlte/dist/css/AdminLTE-rtl.min.css")}}" rel="stylesheet" type="text/css"/>
+        <link href="{{ asset("vendor/crudbooster/assets/adminlte/dist/css/skins/_all-skins-rtl.min.css")}}" rel="stylesheet" type="text/css"/>
+    @else
+        <!-- Theme style -->
+        <link href="{{ asset("vendor/crudbooster/assets/adminlte/dist/css/AdminLTE.min.css")}}" rel="stylesheet" type="text/css"/>
+        <link href="{{ asset("vendor/crudbooster/assets/adminlte/dist/css/skins/_all-skins.min.css")}}" rel="stylesheet" type="text/css"/>
     @endif
 
     <link rel='stylesheet' href='{{asset("vendor/crudbooster/assets/css/main.css") }}'/>
@@ -86,7 +94,7 @@
 
     @stack('head')
 </head>
-<body class="@php echo (Session::get('theme_color'))?:'skin-blue'; echo ' '; echo config('crudbooster.ADMIN_LAYOUT'); @endphp {{($sidebar_mode)?:''}}">
+<body class="@php echo (Session::get('theme_color'))?:'skin-blue'; echo ' '; echo config('crudbooster.ADMIN_LAYOUT'); @endphp {{($sidebar_mode)?:''}}" style="direction: @if (in_array(App::getLocale(), ['ar', 'fa'])) rtl @else ltr @endif">
 <div id='app' class="wrapper">
 
     <!-- Header -->
@@ -142,9 +150,9 @@
 
                 <!--ADD ACTIon-->
                     @if(!empty($index_button))
-
+                        <?php if(count($index_button)>2) echo "<hr/>"; ?>
                         @foreach($index_button as $ib)
-                            <a href='{{$ib["url"]}}' id='{{str_slug($ib["label"])}}' class='btn {{($ib['color'])?'btn-'.$ib['color']:'btn-primary'}} btn-sm'
+                            <a href='{{$ib["url"]}}' id='{{str_slug($ib["label"])}}' class='btn {{($ib['color'])?'btn-'.$ib['color']:'btn-primary'}} btn-sm' style="margin-top: 5px"
                                @if($ib['onClick']) onClick='return {{$ib["onClick"]}}' @endif
                                @if($ib['onMouseOver']) onMouseOver='return {{$ib["onMouseOver"]}}' @endif
                                @if($ib['onMouseOut']) onMouseOut='return {{$ib["onMouseOut"]}}' @endif
@@ -161,7 +169,7 @@
 
                 <ol class="breadcrumb">
                     <li><a href="{{CRUDBooster::adminPath()}}"><i class="fa fa-dashboard"></i> {{ cbLang('home') }}</a></li>
-                    <li class="active">{{$module->name}}</li>
+                    <li class="active">{!! ucwords(($page_title)?:$module->name) !!}</li>
                 </ol>
             @else
                 <h1>{{Session::get('appname')}}
@@ -169,7 +177,6 @@
                 </h1>
             @endif
         </section>
-
 
         <!-- Main content -->
         <section id='content_section' class="content">
@@ -195,8 +202,11 @@
 
         <!-- Your Page Content Here -->
             @yield('content')
-        </section><!-- /.content -->
-    </div><!-- /.content-wrapper -->
+        </section>
+        <!-- /.content -->
+
+    </div>
+    <!-- /.content-wrapper -->
 
     <!-- Footer -->
     @include('crudbooster::footer')

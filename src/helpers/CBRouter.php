@@ -4,6 +4,8 @@ namespace crocodicstudio\crudbooster\helpers;
 
 
 use crocodicstudio\crudbooster\middlewares\CBAuthAPI;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
@@ -63,6 +65,8 @@ class CBRouter
             Route::get('logout', ['uses' => 'AdminController@getLogout', 'as' => 'getLogout']);
             Route::post('login', ['uses' => 'AdminController@postLogin', 'as' => 'postLogin']);
             Route::get('login', ['uses' => 'AdminController@getLogin', 'as' => 'getLogin']);
+            //Route::get('lang/{locale}', ['uses' => 'AdminController@changeLocale', 'as' => 'changeLang']);
+            //Route::get('lang/{locale}', 'AdminController@changeLocale')->name('changeLang');
         });
     }
 

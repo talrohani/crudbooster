@@ -32,6 +32,25 @@ if ($form['datatable'] && $form['relationship_table']) {
         }
         if (! $value) $value = [];
     }
+
+} elseif ($form['dataenum']) {
+    //@$value = explode(";", $value);
+    //@array_walk($value, 'trim');
+    $dataenum = $form['dataenum'];
+    $dataenum = (is_array($dataenum)) ? $dataenum : explode(";", $dataenum);
+    foreach($dataenum as $k=>$d){
+        if (strpos($d, '|')) {
+            $val = substr($d, 0, strpos($d, '|'));
+            $label = substr($d, strpos($d, '|') + 1);
+        } else {
+            $val = $label = $d;
+        }
+        if ($val == $value) {
+            $value = [$label];
+            break;
+        }
+    }
+
 } else {
     $value = explode(";", $value);
 }

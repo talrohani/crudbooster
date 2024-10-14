@@ -14,6 +14,9 @@
                         <div class="icon">
                             <i class="{{ $stat['icon'] }}"></i>
                         </div>
+                        @if(!is_null($stat['url']) && !empty($stat['url']))
+                            <a href="{{ $stat['url'] }}" class="small-box-footer">{{cbLang('action_show_data')}} <i class="fa fa-arrow-circle-down"></i></a>
+                        @endif
                     </div>
                 </div>
             @endforeach
@@ -41,11 +44,15 @@
                     @foreach(explode(',',urldecode(g('parent_columns'))) as $c)
                         <tr>
                             <td width="25%"><strong>
-                                    @if(urldecode(g('parent_columns_alias')))
-                                        {{explode(',',urldecode(g('parent_columns_alias')))[$loop->index]}}
-                                    @else
-                                        {{  ucwords(str_replace('_',' ',$c)) }}
-                                    @endif
+                                        <?php
+                                        if(urldecode(g('parent_columns_alias')))
+                                            $label = explode(',',urldecode(g('parent_columns_alias')))[$loop->index];
+                                        else
+                                            $label = ucwords(str_replace('_',' ',$c));
+                                        $trans_name = trans('admin.'.(Str::replace(" ", "_", $label)));
+                                        if(!Str::startsWith($trans_name,"admin.")) $label = $trans_name;
+                                        echo $label;
+                                        ?>
                                 </strong></td>
                             <td> {{ $parent_table->$c }}</td>
                         </tr>
@@ -82,6 +89,22 @@
                 </div><!--end-pull-left-->
             @endif
             <div class="box-tools pull-{{ cbLang('right') }}" style="position: relative;margin-top: -5px;margin-right: -10px">
+                <?php
+                    $grid_view_url = Request::fullUrl();
+                    $grid_view_url = preg_replace('~(\?|&)grid_view=[^&]*~','$1',$grid_view_url);
+                    if(!Request::get('grid_view')){
+                        if(strpos(Request::fullUrl(), '?')>0) $grid_view_url .= "&grid_view=true";
+                        else $grid_view_url .= "?grid_view=true";
+                    }
+                ?>
+                <a style="margin-top:-23px" href="{{$grid_view_url}}" id='btn_grid_view' data-url-parameter='{{$build_query}}'
+                    class="btn btn-sm btn-default">
+                    @if(Request::get('grid_view'))
+                        <i class="fa fa-table"></i> {{cbLang('table_view')}}
+                    @else
+                       <i class="fa fa-th-large"></i> {{cbLang('grid_view')}}
+                    @endif
+                </a>
 
                 @if($button_filter)
                     <a style="margin-top:-23px" href="javascript:void(0)" id='btn_advanced_filter' data-url-parameter='{{$build_query}}'
@@ -116,7 +139,7 @@
                 <form method='get' id='form-limit-paging' style="display:inline-block" action='{{Request::url()}}'>
                     {!! CRUDBooster::getUrlParameters(['limit']) !!}
                     <div class="input-group">
-                        <select onchange="$('#form-limit-paging').submit()" name='limit' style="width: 56px;" class='form-control input-sm'>
+                        <select onchange="$('#form-limit-paging').submit()" name='limit' style="width: 65px;" class='form-control input-sm'>
                             <option {{($limit==5)?'selected':''}} value='5'>5</option>
                             <option {{($limit==10)?'selected':''}} value='10'>10</option>
                             <option {{($limit==20)?'selected':''}} value='20'>20</option>

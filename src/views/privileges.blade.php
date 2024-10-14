@@ -22,26 +22,29 @@
             <form method='post' action='{{ (@$row->id)?route("PrivilegesControllerPostEditSave")."/$row->id":route("PrivilegesControllerPostAddSave") }}'>
                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
                 <div class="box-body">
-                    <div class="alert alert-info">
+                    <!--<div class="alert alert-info">
                         <strong>Note:</strong> To show the menu you have to create a menu at Menu Management
-                    </div>
+                    </div>-->
                     <div class='form-group'>
                         <label>{{cbLang('privileges_name')}}</label>
                         <input type='text' class='form-control' name='name' required value='{{ @$row->name }}'/>
                         <div class="text-danger">{{ $errors->first('name') }}</div>
                     </div>
 
+                    @if(@$row->is_superadmin==1)
                     <div class='form-group'>
                         <label>{{cbLang('set_as_superadmin')}}</label>
                         <div id='set_as_superadmin' class='radio'>
-                            <label><input required {{ (@$row->is_superadmin==1)?'checked':'' }} type='radio' name='is_superadmin'
+                            <label><input required {{ (@$row->is_superadmin==1)?'checked':'' }} type='radio' name='is_superadmin' {{ (!@CRUDBooster::isSuperAdmin())?'disabled':'' }}
                                           value='1'/> {{cbLang('confirmation_yes')}}</label> &nbsp;&nbsp;
                             <label><input {{ (@$row->is_superadmin==0)?'checked':'' }} type='radio' name='is_superadmin'
                                           value='0'/> {{cbLang('confirmation_no')}}</label>
                         </div>
                         <div class="text-danger">{{ $errors->first('is_superadmin') }}</div>
                     </div>
-
+                    @else
+                        <input type='hidden' class='form-control' name='is_superadmin' required value='0'/>
+                    @endif
                     <div class='form-group'>
                         <label>{{cbLang('chose_theme_color')}}</label>
                         <select name='theme_color' class='form-control' required>

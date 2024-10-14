@@ -5,7 +5,7 @@
             <div class="panel-heading">
                 [name]
             </div>
-            <div class="panel-body table-responsive no-padding">
+            <div class="panel-body table-responsive">
                 [sql]
             </div>
         </div>
@@ -51,7 +51,7 @@
     ?>
 
     @if($sql)
-        <table class='table table-striped'>
+        <table class='table table-hover table-striped table-bordered'>
             <thead>
             <tr>
                 @foreach($sql[0] as $key=>$val)

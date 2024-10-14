@@ -11,7 +11,6 @@
         <?php
         $datamodal_field = explode(',', $form['datamodal_columns'])[0];
         $datamodal_value = DB::table($form['datamodal_table'])->where('id', $value)->first()->$datamodal_field;
-
         ?>
 
         <div id='{{$name}}' class="input-group">

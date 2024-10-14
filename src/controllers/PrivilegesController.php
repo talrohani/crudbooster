@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\PDF;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class PrivilegesController extends CBController
 {
@@ -36,10 +37,24 @@ class PrivilegesController extends CBController
         $this->form[] = ["label" => "Is Superadmin", "name" => "is_superadmin", 'required' => true];
         $this->form[] = ["label" => "Theme Color", "name" => "theme_color", 'required' => true];
 
-        $this->alert[] = [
+        /*$this->alert[] = [
             'message' => "You can use the helper <code>CRUDBooster::getMyPrivilegeId()</code> to get current user login privilege id, or <code>CRUDBooster::getMyPrivilegeName()</code> to get current user login privilege name",
             'type' => 'info',
-        ];
+        ];*/
+    }
+
+    function transModules($moduls)
+    {
+        $lang = $this->getLanguage();
+        if($lang == "ar"){
+            foreach ($moduls as $modul){
+                if(empty($modul->name)) continue;
+                $name = Str::replace(" ", "_", $modul->name);
+                $trans_name = trans('admin.'.($name));
+                if(!Str::startsWith($trans_name,"admin.")) $modul->name = $trans_name;
+            }
+        }
+        return $moduls;
     }
 
     public function getAdd()
@@ -51,9 +66,12 @@ class PrivilegesController extends CBController
             CRUDBooster::redirect(CRUDBooster::adminPath(), cbLang("denied_access"));
         }
 
+        $moduls = DB::table("cms_moduls")->where('is_protected', 0)->whereNull('deleted_at')->select("cms_moduls.*", DB::raw("(select is_visible from cms_privileges_roles where id_cms_moduls = cms_moduls.id and id_cms_privileges = '$id') as is_visible"), DB::raw("(select is_create from cms_privileges_roles where id_cms_moduls  = cms_moduls.id and id_cms_privileges = '$id') as is_create"), DB::raw("(select is_read from cms_privileges_roles where id_cms_moduls    = cms_moduls.id and id_cms_privileges = '$id') as is_read"), DB::raw("(select is_edit from cms_privileges_roles where id_cms_moduls    = cms_moduls.id and id_cms_privileges = '$id') as is_edit"), DB::raw("(select is_delete from cms_privileges_roles where id_cms_moduls  = cms_moduls.id and id_cms_privileges = '$id') as is_delete"))->orderby("name", "asc")->get();
+        $moduls = $this->transModules($moduls);
+
         $id = 0;
-        $data['page_title'] = "Add Data";
-        $data['moduls'] = DB::table("cms_moduls")->where('is_protected', 0)->whereNull('deleted_at')->select("cms_moduls.*", DB::raw("(select is_visible from cms_privileges_roles where id_cms_moduls = cms_moduls.id and id_cms_privileges = '$id') as is_visible"), DB::raw("(select is_create from cms_privileges_roles where id_cms_moduls  = cms_moduls.id and id_cms_privileges = '$id') as is_create"), DB::raw("(select is_read from cms_privileges_roles where id_cms_moduls    = cms_moduls.id and id_cms_privileges = '$id') as is_read"), DB::raw("(select is_edit from cms_privileges_roles where id_cms_moduls    = cms_moduls.id and id_cms_privileges = '$id') as is_edit"), DB::raw("(select is_delete from cms_privileges_roles where id_cms_moduls  = cms_moduls.id and id_cms_privileges = '$id') as is_delete"))->orderby("name", "asc")->get();
+        $data['page_title'] = cbLang('action_add_data'); //"Add Data";
+        $data['moduls'] = $moduls;
         $data['page_menu'] = Route::getCurrentRoute()->getActionName();
 
         return view('crudbooster::privileges', $data);
@@ -71,8 +89,14 @@ class PrivilegesController extends CBController
             CRUDBooster::redirect(CRUDBooster::adminPath(), cbLang("denied_access"));
         }
 
+        //{{ (!@CRUDBooster::isSuperAdmin())?'disabled':'' }}
         $this->validation();
         $this->input_assignment();
+        /*if(!@CRUDBooster::isSuperAdmin() && $this->arr['is_superadmin'] = 1){
+            window.alert("You can't set SuperAdmin");
+            return;
+        }*/
+        if(!@CRUDBooster::isSuperAdmin()) $this->arr['is_superadmin'] = 0;
         $id = DB::table($this->table)->insertGetId($this->arr);
 
         //set theme
@@ -116,9 +140,10 @@ class PrivilegesController extends CBController
             CRUDBooster::redirect(CRUDBooster::adminPath(), cbLang('denied_access'));
         }
 
-        $page_title = cbLang('edit_data_page_title', ['module' => 'Privilege', 'name' => $row->name]);
+        $page_title = cbLang('edit_data_page_title', ['module' => cbLang('privilege'), 'name' => $row->name]);
 
         $moduls = DB::table("cms_moduls")->where('is_protected', 0)->where('deleted_at', null)->select("cms_moduls.*")->orderby("name", "asc")->get();
+        $moduls = $this->transModules($moduls);
         $page_menu = Route::getCurrentRoute()->getActionName();
 
         return view('crudbooster::privileges', compact('row', 'page_title', 'moduls', 'page_menu'));
@@ -206,5 +231,14 @@ class PrivilegesController extends CBController
         DB::table("cms_privileges_roles")->where("id_cms_privileges", $row->id)->delete();
 
         CRUDBooster::redirect(CRUDBooster::mainpath(), cbLang("alert_delete_data_success"), 'success');
+    }
+
+
+    public function hook_query_index(&$query) {
+
+        if(!CRUDBooster::isSuperadmin()) { // This allows the SuperAdmin to still see himself in the list
+            $query->where('cms_privileges.is_superadmin', '<>', '1'); // Adds the restriction
+        }
+
     }
 }

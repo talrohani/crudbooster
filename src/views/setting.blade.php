@@ -2,7 +2,8 @@
 @section('content')
     @push('bottom')
         <script src="{{asset('vendor/laravel-filemanager/js/lfm.js')}}"></script>
-        <script src="//cdn.tinymce.com/4/tinymce.min.js"></script>
+        <!--<script src="//cdn.tinymce.com/4/tinymce.min.js"></script>-->
+        <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
         <script>
             $(function () {
                 $('.label-setting').hover(function () {
@@ -53,8 +54,10 @@
 
     <div style="width:750px;margin:0 auto ">
 
+        @if(CRUDBooster::isSuperAdmin())
         <p align="right"><a title='Add Field Setting' class='btn btn-sm btn-primary' href='{{route("SettingsControllerGetAdd")."?group_setting=".$page_title}}'><i
                         class='fa fa-plus'></i> Add Field Setting</a></p>
+        @endif
 
         <div class="panel panel-default">
             <div class="panel-heading">
@@ -84,11 +87,13 @@
                         ?>
                         <div class='form-group'>
                             <label class='label-setting' title="{{$s->name}}">{{$s->label}}
+                                @if(CRUDBooster::isSuperAdmin())
                                 <a style="visibility:hidden" href='{{CRUDBooster::mainpath("edit/$s->id")}}' title='Edit This Meta Setting'
                                    class='btn btn-box-tool'><i class='fa fa-pencil'></i></a>
                                 <a style="visibility:hidden" href='javascript:;' title='Delete this Setting' class='btn btn-box-tool'
                                    onClick='swal({   title: "Are you sure?",   text: "You will not be able to recover {{$s->label}} and may be can cause some errors on your system !",   type: "warning",   showCancelButton: true,   confirmButtonColor: "#DD6B55",   confirmButtonText: "Yes, delete it!",   closeOnConfirm: false }, function(){  location.href="{{CRUDBooster::mainpath("delete/$s->id")}}" });'
                                 ><i class='fa fa-trash'></i></a>
+                                @endif
                             </label>
                             <?php
                             switch ($s->content_input_type) {
@@ -112,6 +117,7 @@
                                     if ($value) {
                                         echo "<p><a href='".asset($value)."' target='_blank' title='Download the file of $s->label'><i class='fa fa-download'></i> Download the File  of $s->label</a></p>";
                                         echo "<input type='hidden' name='$s->name' value='$value'/>";
+                                        if(CRUDBooster::isDelete())
                                         echo "<div class='pull-right'><a class='btn btn-danger btn-xs' onclick='if(confirm(\"Are you sure want to delete ?\")) location.href=\"".CRUDBooster::mainpath("delete-file-setting?id=$s->id")."\"' title='Click here to delete'><i class='fa fa-trash'></i></a></div>";
                                     } else {
                                         echo "<input type='file' name='$s->name' class='form-control'/>";
@@ -119,9 +125,11 @@
                                     echo "<div class='help-block'>File support only jpg,png,gif, Max 10 MB</div>";
                                     break;
                                 case 'upload_file':
+                                case 'upload_document':
                                     if ($value) {
                                         echo "<p><a href='".asset($value)."' target='_blank' title='Download the file of $s->label'><i class='fa fa-download'></i> Download the File  of $s->label</a></p>";
                                         echo "<input type='hidden' name='$s->name' value='$value'/>";
+                                        if(CRUDBooster::isDelete())
                                         echo "<div class='pull-right'><a class='btn btn-danger btn-xs' onclick='if(confirm(\"Are you sure want to delete ?\")) location.href=\"".CRUDBooster::mainpath("delete-file-setting?id=$s->id")."\"' title='Click here to delete'><i class='fa fa-trash'></i></a></div>";
                                     } else {
                                         echo "<input type='file' name='$s->name' class='form-control'/>";
@@ -146,8 +154,15 @@
                                     echo "<select name='$s->name' class='form-control'><option value=''>** Please select $s->label</option>";
                                     if ($dataenum):
                                         foreach ($dataenum as $enum) {
-                                            $selected = ($enum == $value) ? "selected" : "";
-                                            echo "<option $selected value='$enum'>$enum</option>";
+                                            $text = $enum;
+                                            $val = $enum;
+                                            if(str_contains($enum, '|')){
+                                                $arr = explode('|', $enum);
+                                                $val = $arr[0];
+                                                $text = $arr[1];
+                                            }
+                                            $selected = ($val == $value) ? "selected" : "";
+                                            echo "<option $selected value='$val'>$text</option>";
                                         }
                                     endif;
                                     echo "</select>";
@@ -160,9 +175,11 @@
                         <?php endforeach;?>
                     </div><!-- /.box-body -->
                     <div class="box-footer">
+                        @if(CRUDBooster::isUpdate())
                         <div class='pull-right'>
                             <input type='submit' name='submit' value='Save' class='btn btn-success'/>
                         </div>
+                        @endif
                     </div><!-- /.box-footer-->
                 </form>
             </div>

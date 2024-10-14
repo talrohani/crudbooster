@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Excel;
 use Illuminate\Support\Facades\PDF;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Str;
 
 class StatisticBuilderController extends CBController
 {
@@ -28,6 +29,7 @@ class StatisticBuilderController extends CBController
         $this->button_export = false;
         $this->button_import = false;
 
+        $this->page_title = cbLang('Statistic_Builder');
         $this->col = [];
         $this->col[] = ["label" => "Name", "name" => "name"];
 
@@ -76,7 +78,10 @@ class StatisticBuilderController extends CBController
         $row = CRUDBooster::first($this->table, ['slug' => $slug]);
         $id_cms_statistics = $row->id;
         $page_title = $row->name;
-
+        //trans name
+        $name = str_replace(" ", "_", $row->name);
+        $trans_name = trans('admin.'.($name));
+        if(!Str::startsWith($trans_name,"admin.")) $page_title = $trans_name;
 
         $data = [];
         $data['row'] = $row;
@@ -105,7 +110,7 @@ class StatisticBuilderController extends CBController
             CRUDBooster::redirect(CRUDBooster::adminPath(), cbLang('denied_access'));
         }
 
-        $page_title = 'Statistic Builder';
+        $page_title = cbLang('Statistic_Builder'); //'Statistic Builder';
 
         return view('crudbooster::statistic_builder.builder', compact('page_title', 'id_cms_statistics'));
     }

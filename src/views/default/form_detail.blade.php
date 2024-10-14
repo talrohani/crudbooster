@@ -29,6 +29,13 @@ $asset_already[] = $type;
 <div class='table-responsive'>
     <table id='table-detail' class='table table-striped'>
 
+        @if($button_action)
+            <tr><td colspan="2">
+                    {!! $button_action !!}
+                </td>
+            </tr>
+        @endif
+
         <?php
         foreach($forms as $index=>$form):
 

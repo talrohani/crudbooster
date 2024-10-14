@@ -1,9 +1,9 @@
 <?php
-/* 
+/*
 | ---------------------------------------------------------------------------------------------------------------
 | Main Helper of CRUDBooster
 | Do not edit or modify this helper unless your modification will be replace if any update from CRUDBooster.
-| 
+|
 | Homepage : http://crudbooster.com
 | ---------------------------------------------------------------------------------------------------------------
 |
@@ -90,7 +90,7 @@ if(!function_exists('now')) {
     }
 }
 
-/* 
+/*
 | --------------------------------------------------------------------------------------------------------------
 | Get data from input post/get more simply
 | --------------------------------------------------------------------------------------------------------------
@@ -107,6 +107,18 @@ if(!function_exists('get_setting')) {
     function get_setting($key, $default = null) {
         $setting = \crocodicstudio\crudbooster\helpers\CB::getSetting($key);
         $setting = ($setting)?:$default;
+        return $setting;
+    }
+}
+
+if(!function_exists('set_setting')) {
+    /**
+     * @param $key
+     * @param null $default
+     * @return bool
+     */
+    function set_setting($key, $value) {
+        $setting = \crocodicstudio\crudbooster\helpers\CB::setSetting($key, $value);
         return $setting;
     }
 }

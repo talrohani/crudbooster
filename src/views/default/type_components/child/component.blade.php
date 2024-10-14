@@ -1,5 +1,5 @@
 <?php
-$name = str_slug($form['label'], '');
+$name = str_slug($form['name'], '');
 ?>
 @push('bottom')
     <script type="text/javascript">
@@ -11,7 +11,7 @@ $name = str_slug($form['label'], '');
 <div class='form-group {{$header_group_class}}' id='form-group-{{$name}}'>
 
     @if($form['columns'])
-        <div class="col-sm-12">
+        <div class="col-sm-12" style="margin-top: 10px">
 
             <div id='panel-form-{{$name}}' class="panel panel-default">
                 <div class="panel-heading">
@@ -20,22 +20,23 @@ $name = str_slug($form['label'], '');
                 <div class="panel-body">
 
                     <div class='row'>
-                        <div class='col-sm-10'>
+                        <div class='col-sm-12'>
                             <div class="panel panel-default">
-                                <div class="panel-heading"><i class="fa fa-pencil-square-o"></i> {{cbLang("text_form")}}</div>
+                                <div class="panel-heading"><i class="fa fa-pencil-square-o"></i> <span id="form-title-{{$name}}">{{cbLang("action_add_data")}}</span></div>
                                 <div class="panel-body child-form-area">
+                                    <input type="hidden" id="{{$name}}id" name="child-{{$name}}id" value="0">
                                     @foreach($form['columns'] as $col)
                                         <?php $name_column = $name.$col['name'];?>
-                                        <div class='form-group'>
+                                        <div class='form-group no-margin no-padding {{$col['width']?:'col-sm-6'}}'>
                                             @if($col['type']!='hidden')
-                                                <label class="control-label col-sm-2">{{$col['label']}}
-                                                    @if(!empty($col['required'])) <span class="text-danger"
-                                                                                        title="{{cbLang('this_field_is_required')}}">*</span> @endif
+                                                <label class="control-label col-sm-12" style="text-align: start">{{$col['label']}}
+                                                    @if(!empty($col['required']))
+                                                        <span class="text-danger" title="{{cbLang('this_field_is_required')}}">*</span> @endif
                                                 </label>
                                             @endif
-                                            <div class="col-sm-10">
+                                            <div class="col-sm-12">
                                                 @if($col['type']=='text')
-                                                    <input id='{{$name_column}}' type='text'
+                                                    <input id='{{$name_column}}' type='text' {{ isset($col['value'])?"value=$col[value]":"" }}
                                                            {{ ($col['max'])?"maxlength='".$col['max']."'":"" }} name='child-{{$col["name"]}}'
                                                            class='form-control {{$col['required']?"required":""}}'
                                                             {{($col['readonly']===true)?"readonly":""}}
@@ -62,7 +63,7 @@ $name = str_slug($form['label'], '');
                                                     <label class="radio-inline">
                                                         <input type="radio" name="child-{{$col['name']}}"
                                                                class='{{ ($e==0 && $col['required'])?"required":""}} {{$name_column}}'
-                                                               value="{{$radio_value}}"{{ ($e==0 && $col['required'])?" checked":""}}> {{$radio_label}}
+                                                               value="{{$radio_value}}"{{ ($e==0 && $col['required'])?" checked":""}}> <span>{{$radio_label}}</span>
                                                     </label>
                                                     <?php endforeach;?>
                                                     <?php endif;?>
@@ -133,10 +134,25 @@ $name = str_slug($form['label'], '');
                                                     <input id='{{$name_column}}' type='number'
                                                            {{ ($col['min'])?"min='".$col['min']."'":"" }} {{ ($col['max'])?"max='$col[max]'":"" }} name='child-{{$col["name"]}}'
                                                            class='form-control {{$col['required']?"required":""}}'
-                                                            {{($col['readonly']===true)?"readonly":""}}
+                                                            {{($col['readonly']===true)?"readonly":""}} {{ isset($col['value'])?"value=$col[value]":"" }}
+                                                    />
+
+
+                                                @elseif($col['type']=='password')
+                                                    <input id='{{$name_column}}' type='password'
+                                                           {{ ($col['min'])?"min='".$col['min']."'":"" }} {{ ($col['max'])?"max='$col[max]'":"" }} name='child-{{$col["name"]}}'
+                                                           class='form-control {{$col['required']?"required":""}}'
+                                                        {{($col['readonly']===true)?"readonly":""}}
+                                                    />
+
+                                                @elseif($col['type']=='date')
+                                                    <input id='{{$name_column}}' type='date'
+                                                           {{ ($col['min'])?"min='".$col['min']."'":"" }} {{ ($col['max'])?"max='$col[max]'":"" }} name='child-{{$col["name"]}}'
+                                                           class='form-control {{$col['required']?"required":""}}' {{($col['readonly']===true)?"readonly":""}}
+                                                            {{ isset($col['value'])?"value=$col[value]":"" }}
                                                     />
                                                 @elseif($col['type']=='textarea')
-                                                    <textarea id='{{$name_column}}' name='child-{{$col["name"]}}'
+                                                    <textarea id='{{$name_column}}' name='child-{{$col["name"]}}' {{ isset($col['value'])?"value=$col[value]":"" }}
                                                               class='form-control {{$col['required']?"required":""}}' {{($col['readonly']===true)?"readonly":""}} ></textarea>
                                                 @elseif($col['type']=='upload')
                                                     <div id='{{$name_column}}' class="input-group">
@@ -257,6 +273,7 @@ $name = str_slug($form['label'], '');
                                                     @endpush
 
                                                 @elseif($col['type']=='select')
+                                                    <?php $default = ! empty($col['default']) ? $col['default'] : cbLang('text_prefix_option')." ".$col['label'];?>
 
                                                     @if($col['parent_select'])
                                                         @push('bottom')
@@ -384,7 +401,7 @@ $name = str_slug($form['label'], '');
                                             var currentRow = null;
 
                                             function resetForm{{$name}}() {
-                                                $('#panel-form-{{$name}}').find("input[type=text],input[type=number],select,textarea").val('');
+                                                $('#panel-form-{{$name}}').find("input[type=text],input[type=number],input[type=password],select,textarea").val('');
                                                 $('#panel-form-{{$name}}').find(".select2").val('').trigger('change');
                                             }
 
@@ -404,25 +421,32 @@ $name = str_slug($form['label'], '');
                                                 currentRow = p;
                                                 p.addClass('warning');
                                                 $('#btn-add-table-{{$name}}').val('{{cbLang("save_changes")}}');
+                                                $('#form-title-{{$name}}').html('{{cbLang("action_edit_data")}}');
+                                                $('#{{$name}}id').val(p.find(".{{$name}}-id").val());
                                                 @foreach($form['columns'] as $c)
-                                                @if($c['type']=='select')
-                                                $('#{{$name.$c["name"]}}').val(p.find(".{{$c['name']}} input").val()).trigger("change");
-                                                        @elseif($c['type']=='radio')
-                                                var v = p.find(".{{$c['name']}} input").val();
-                                                $('.{{$name.$c["name"]}}[value=' + v + ']').prop('checked', true);
-                                                @elseif($c['type']=='datamodal')
-                                                $('#{{$name.$c["name"]}} .input-label').val(p.find(".{{$c['name']}} .td-label").text());
-                                                $('#{{$name.$c["name"]}} .input-id').val(p.find(".{{$c['name']}} input").val());
-                                                @elseif($c['type']=='upload')
-                                                @if($c['upload_type']=='image')
-                                                $('#{{$name.$c["name"]}} .input-label').val(p.find(".{{$c['name']}} img").data('label'));
-                                                @else
-                                                $('#{{$name.$c["name"]}} .input-label').val(p.find(".{{$c['name']}} a").data('label'));
-                                                @endif
-                                                $('#{{$name.$c["name"]}} .input-id').val(p.find(".{{$c['name']}} input").val());
-                                                @else
-                                                $('#{{$name.$c["name"]}}').val(p.find(".{{$c['name']}} input").val());
-                                                @endif
+                                                    @if($c['type']=='select')
+                                                        //alert(p.find(".{{$c['name']}} input").val());
+                                                        var columnValue = p.find(".{{$c['name']}} input").val();
+                                                        $('#{{$name.$c["name"]}}').val(columnValue).trigger("change");
+                                                        //$('#{{$name.$c["name"]}}').change();
+                                                        //$('#{{$name.$c["name"]}} option[value='+columnValue+']').attr('selected','selected');
+                                                        //$('#{{$name.$c["name"]}}').val(p.find(".{{$c['name']}} input").val())
+                                                    @elseif($c['type']=='radio')
+                                                        var v = p.find(".{{$c['name']}} input").val();
+                                                        $('.{{$name.$c["name"]}}[value=' + v + ']').prop('checked', true);
+                                                    @elseif($c['type']=='datamodal')
+                                                        $('#{{$name.$c["name"]}} .input-label').val(p.find(".{{$c['name']}} .td-label").text());
+                                                        $('#{{$name.$c["name"]}} .input-id').val(p.find(".{{$c['name']}} input").val());
+                                                    @elseif($c['type']=='upload')
+                                                        @if($c['upload_type']=='image')
+                                                            $('#{{$name.$c["name"]}} .input-label').val(p.find(".{{$c['name']}} img").data('label'));
+                                                        @else
+                                                            $('#{{$name.$c["name"]}} .input-label').val(p.find(".{{$c['name']}} a").data('label'));
+                                                        @endif
+                                                            $('#{{$name.$c["name"]}} .input-id').val(p.find(".{{$c['name']}} input").val());
+                                                    @elseif($c['type']!='password')
+                                                        $('#{{$name.$c["name"]}}').val(p.find(".{{$c['name']}} input").val());
+                                                    @endif
                                                 @endforeach
                                             }
 
@@ -450,13 +474,15 @@ $name = str_slug($form['label'], '');
                                                 }
 
                                                 var trRow = '<tr>';
+                                                trRow += "<input type='hidden' name='{{$name}}-id[]' class='{{$name}}-id' value='" + $('#{{$name}}id').val() + "'/>";
                                                 @foreach($form['columns'] as $c)
-                                                        @if($c['type']=='select')
+
+                                                @if($c['type']=='select')
                                                     trRow += "<td class='{{$c['name']}}'>" + $('#{{$name.$c["name"]}} option:selected').text() +
                                                     "<input type='hidden' name='{{$name}}-{{$c['name']}}[]' value='" + $('#{{$name.$c["name"]}}').val() + "'/>" +
                                                     "</td>";
                                                 @elseif($c['type']=='radio')
-                                                    trRow += "<td class='{{$c['name']}}'><span class='td-label'>" + $('.{{$name.$c["name"]}}:checked').val() + "</span>" +
+                                                    trRow += "<td class='{{$c['name']}}'><span class='td-label'>" + $('.{{$name.$c["name"]}}:checked').next('span').html() + "</span>" +
                                                     "<input type='hidden' name='{{$name}}-{{$c['name']}}[]' value='" + $('.{{$name.$c["name"]}}:checked').val() + "'/>" +
                                                     "</td>";
                                                 @elseif($c['type']=='datamodal')
@@ -464,22 +490,28 @@ $name = str_slug($form['label'], '');
                                                     "<input type='hidden' name='{{$name}}-{{$c['name']}}[]' value='" + $('#{{$name.$c["name"]}} .input-id').val() + "'/>" +
                                                     "</td>";
                                                 @elseif($c['type']=='upload')
-                                                        @if($c['upload_type']=='image')
-                                                    trRow += "<td class='{{$c['name']}}'>" +
-                                                    "<a data-lightbox='roadtrip' href='{{asset('/')}}" + $('#{{$name.$c["name"]}} .input-id').val() + "'><img data-label='" + $('#{{$name.$c["name"]}} .input-label').val() + "' src='{{asset('/')}}" + $('#{{$name.$c["name"]}} .input-id').val() + "' width='50px' height='50px'/></a>" +
-                                                    "<input type='hidden' name='{{$name}}-{{$c['name']}}[]' value='" + $('#{{$name.$c["name"]}} .input-id').val() + "'/>" +
-                                                    "</td>";
+                                                    @if($c['upload_type']=='image')
+                                                        trRow += "<td class='{{$c['name']}}'>" +
+                                                            "<a data-lightbox='roadtrip' href='{{asset('/')}}" + $('#{{$name.$c["name"]}} .input-id').val() + "'><img data-label='" + $('#{{$name.$c["name"]}} .input-label').val() + "' src='{{asset('/')}}" + $('#{{$name.$c["name"]}} .input-id').val() + "' width='50px' height='50px'/></a>" +
+                                                            "<input type='hidden' name='{{$name}}-{{$c['name']}}[]' value='" + $('#{{$name.$c["name"]}} .input-id').val() + "'/>" +
+                                                            "</td>";
+                                                    @else
+                                                        trRow += "<td class='{{$c['name']}}'><a data-label='" + $('#{{$name.$c["name"]}} .input-label').val() + "' href='{{asset('/')}}" + $('#{{$name.$c["name"]}} .input-id').val() + "'>" + $('#{{$name.$c["name"]}} .input-label').val() + "</a>" +
+                                                            "<input type='hidden' name='{{$name}}-{{$c['name']}}[]' value='" + $('#{{$name.$c["name"]}} .input-id').val() + "'/>" +
+                                                            "</td>";
+                                                    @endif
+                                                @elseif($c['type']=='hidden' || $c['type']=='password')
+                                                        trRow += "<td class='{{$c['name']}}'> " +
+                                                        "<input type='hidden' name='{{$name}}-{{$c['name']}}[]' value='" + $('#{{$name.$c["name"]}}').val() + "'/>" +
+                                                        "</td>";
                                                 @else
-                                                    trRow += "<td class='{{$c['name']}}'><a data-label='" + $('#{{$name.$c["name"]}} .input-label').val() + "' href='{{asset('/')}}" + $('#{{$name.$c["name"]}} .input-id').val() + "'>" + $('#{{$name.$c["name"]}} .input-label').val() + "</a>" +
-                                                    "<input type='hidden' name='{{$name}}-{{$c['name']}}[]' value='" + $('#{{$name.$c["name"]}} .input-id').val() + "'/>" +
-                                                    "</td>";
-                                                @endif
-                                                        @else
                                                     trRow += "<td class='{{$c['name']}}'>" + $('#{{$name.$c["name"]}}').val() +
                                                     "<input type='hidden' name='{{$name}}-{{$c['name']}}[]' value='" + $('#{{$name.$c["name"]}}').val() + "'/>" +
                                                     "</td>";
                                                 @endif
-                                                        @endforeach
+                                                @endforeach
+
+                                                    //edit & delete buttons
                                                     trRow += "<td>" +
                                                     "<a href='#panel-form-{{$name}}' onclick='editRow{{$name}}(this)' class='btn btn-warning btn-xs'><i class='fa fa-pencil'></i></a> " +
                                                     "<a href='javascript:void(0)' onclick='deleteRow{{$name}}(this)' class='btn btn-danger btn-xs'><i class='fa fa-trash'></i></a></td>";
@@ -510,14 +542,18 @@ $name = str_slug($form['label'], '');
 
                     <div class="panel panel-default">
                         <div class="panel-heading">
-                            <i class='fa fa-table'></i> {{cbLang('table_detail')}}
+                            <i class='fa fa-table'></i> {{$form['label']}} - {{cbLang('table_detail')}}
                         </div>
                         <div class="panel-body no-padding table-responsive" style="max-height: 400px;overflow: auto;">
                             <table id='table-{{$name}}' class='table table-striped table-bordered'>
                                 <thead>
                                 <tr>
                                     @foreach($form['columns'] as $col)
-                                        <th>{{$col['label']}}</th>
+                                        <?php if ($col['type'] == 'hidden' || $col['type'] == 'password'){ ?>
+                                            <th>&nbsp;</th>
+                                        <?php }else{ ?>
+                                            <th>{{$col['label']}}</th>
+                                        <?php } ?>
                                     @endforeach
                                     <th width="90px">{{cbLang('action_label')}}</th>
                                 </tr>
@@ -527,14 +563,17 @@ $name = str_slug($form['label'], '');
                                 <?php
                                 $columns_tbody = [];
                                 $data_child = DB::table($form['table'])->where($form['foreign_key'], $id);
+                                    $data_child->addselect($form['table'].'.id');
                                 foreach ($form['columns'] as $i => $c) {
                                     $data_child->addselect($form['table'].'.'.$c['name']);
 
                                     if ($c['type'] == 'datamodal') {
                                         $datamodal_title = explode(',', $c['datamodal_columns'])[0];
                                         $datamodal_table = $c['datamodal_table'];
-                                        $data_child->join($c['datamodal_table'], $c['datamodal_table'].'.id', '=', $c['name']);
-                                        $data_child->addselect($c['datamodal_table'].'.'.$datamodal_title.' as '.$datamodal_table.'_'.$datamodal_title);
+                                        if(Str::startsWith($datamodal_table,'vw')) $datamodal_table = 'tb'.substr($datamodal_table,2);
+                                        $data_child->join($datamodal_table, $datamodal_table.'.id', '=', $c['name']);
+                                        $data_child->addselect($datamodal_table.'.'.$datamodal_title.' as '.$datamodal_table.'_'.$datamodal_title);
+
                                     } elseif ($c['type'] == 'select') {
                                         if ($c['datatable']) {
                                             $join_table = explode(',', $c['datatable'])[0];
@@ -549,10 +588,13 @@ $name = str_slug($form['label'], '');
                                 foreach($data_child as $d):
                                 ?>
                                 <tr>
+                                    <?php echo "<input type='hidden' name='".$name."-id[]' class='".$name."-id' value='".$d->{'id'}."'/>"; ?>
                                     @foreach($form['columns'] as $col)
                                         <td class="{{$col['name']}}">
                                             <?php
-                                            if ($col['type'] == 'select') {
+                                            if ($col['type'] == 'hidden' || $col['type'] == 'password') {
+                                                echo "<input type='hidden' name='".$name."-".$col['name']."[]' value='".$d->{$col['name']}."'/>";
+                                            } elseif ($col['type'] == 'select') {
                                                 if ($col['datatable']) {
                                                     $join_table = explode(',', $col['datatable'])[0];
                                                     $join_field = explode(',', $col['datatable'])[1];
@@ -570,6 +612,7 @@ $name = str_slug($form['label'], '');
                                             } elseif ($col['type'] == 'datamodal') {
                                                 $datamodal_title = explode(',', $col['datamodal_columns'])[0];
                                                 $datamodal_table = $col['datamodal_table'];
+                                                if(Str::startsWith($datamodal_table,'vw')) $datamodal_table = 'tb'.substr($datamodal_table,2);
                                                 echo "<span class='td-label'>";
                                                 echo $d->{$datamodal_table.'_'.$datamodal_title};
                                                 echo "</span>";

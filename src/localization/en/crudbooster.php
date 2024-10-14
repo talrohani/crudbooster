@@ -77,6 +77,7 @@ return [
     'alert_validation_error' => 'Please fill out the form correctly : :error',
     'alert_select_a_data' => 'Please select at least one data!',
 
+    'privilege' => 'Privilege',
     'add_data_page_title' => 'Add :module',
     'edit_data_page_title' => 'Edit :module',
     'detail_data_page_title' => 'Detail :module',
@@ -110,6 +111,7 @@ return [
     'button_sign_in' => 'Sign In',
     'button_selected_action' => 'Bulk Actions',
     'button_download_file' => 'Download file',
+    'button_view_file' => 'View file',
     'button_reset' => 'Reset',
     'button_add_to_table' => 'Add To Table',
 
@@ -267,4 +269,9 @@ return [
     'this_field_is_required' => 'This field is required',
     'text_form' => 'Form',
     "your_file_extension_is_not_allowed " => "Your file extension is not allowed !",
+    'table_view' => 'Table View',
+    'grid_view' => 'Grid View',
+
+    'foreign_key_violation' => 'There is a link to another document, the operation cannot be completed',
+    'unique_key_violation' => 'The record already exists, and the record cannot be duplicated again.',
 ];

@@ -29,6 +29,7 @@ return [
     'message_after_logout' => 'شكرا لك ، نراك لاحقا !',
     'message_forgot_password' => 'تم ارسال كلمة المرور إلى بريدك الإلكتروني !',
 
+    'privilege' => 'صلاحية',
     'page_not_found' => 'عفوا الصفحة غير موجودة',
     'page_not_found_text' => 'لم يتم العثور على الصفحة التي تبحث عنها.',
     'page_not_found_tips' => '* تآكد من ان الرابط صحيح<br/>
@@ -105,8 +106,9 @@ return [
     'button_sign_in' => 'تسجيل الدخول',
     'button_selected_action' => 'الاجراء الجماعي',
     'button_download_file' => 'تنزيل الملف',
+    'button_view_file' => 'عرض الملف',
     'button_reset' => 'اعادة تعيين',
-    'button_add_to_table' => 'Add To Table',
+    'button_add_to_table' => 'اضافة الى الجدول',
 
     'export_dialog_title' => "تصدير البيانات",
     'export_dialog_filename' => 'اسم الملف',
@@ -122,7 +124,7 @@ return [
 
     'import_page_title' => 'استيراد :module',
     'dashboard_default_text' => 'مرحبا بك في شاشة :appname',
-    'form_back_to_list' => 'العودة إلى قائمة البيانات :module',
+    'form_back_to_list' => 'العودة إلى قائمة بيانات :module',
     'not_logged_in' => 'لم تقم بتسجيل الدخول !',
     'menu_navigation' => "التنقل",
     'table_data_not_found' => "لا توجد بيانات متوفرة",
@@ -138,8 +140,8 @@ return [
     'online' => 'متصل',
     'controller_route_404' => 'لم يتم العثور على الرابط المطلوب',
     'home' => 'الرئيسية',
-    'Notifications' => 'Notifications',
-    'Privileges' => 'Privileges',
+    'Notifications' => 'الإشعارات',
+    'Privileges' => 'الصلاحيات',
     'Privileges_Roles' => 'صلاحيات الوصول',
     'Add_New_Privilege' => 'اضافة صلاحية',
     'List_Privilege' => 'عرض الصلاحيات',
@@ -203,7 +205,7 @@ return [
     'filter_in' => 'ضمن',
     'filter_not_in' => 'ليس ضمن',
     'filter_between' => 'بين',
-    'filter_empty_or_null' => 'Empty ( or Null)',
+    'filter_empty_or_null' => 'فارغ ( او غير مدخل)',
     'filter_sort_ascending' => 'فرز تصاعدي',
     'filter_sort_descending' => 'فرز تنازلي',
     'filter_eg' => 'مثال',
@@ -212,7 +214,10 @@ return [
     'filter_search' => 'بحث',
     'filter_from' => 'من',
     'filter_to' => 'إلى',
-    'filter_sorting' => 'Sorting',
+    'filter_sorting' => 'ترتيب',
+    'filter_rows_total' => 'عدد السجلات',
+    'filter_rows_to' => 'الى',
+    'filter_rows_of' => 'من',
     // confirmation
     'confirmation_yes' => 'نعم!',
     'confirmation_no' => 'لا',
@@ -232,10 +237,10 @@ return [
     'privileges_configuration' => 'اعدادات الصلاحيات',
     'privileges_module_list_no' => 'لا.',
     'privileges_module_list_mod_names' => 'اسم النظام',
-    'privileges_module_list_view' => 'عرض',
-    'privileges_module_list_create' => 'انشاء',
-    'privileges_module_list_read' => 'قراءة',
-    'privileges_module_list_update' => 'تحديث',
+    'privileges_module_list_view' => 'استعراض',
+    'privileges_module_list_create' => 'اضافة',
+    'privileges_module_list_read' => 'تفاصيل',
+    'privileges_module_list_update' => 'تعديل',
     'privileges_module_list_delete' => 'حذف',
 
     //datamodal
@@ -253,4 +258,18 @@ return [
     'this_field_is_required' => 'الحقل اجباري',
     'text_form' => 'نموذح',
     "your_file_extension_is_not_allowed " => "امتداد الملف غير مسموح به !",
+    'table_view' => 'عرض جدولي',
+    'grid_view' => 'عرض شبكي',
+
+    'foreign_key_violation' => 'هناك ارتباط مع مستند أخر، لا يمكن إتمام العملية',
+    'unique_key_violation' => 'السجل موجود مسبقاً، ولا يمكن تكرار السجل مرة اخرى.',
+
+    //action confirmation
+    'confirmation_title' => 'تأكيد',
+    'confirmation_text' => 'هل أنت متأكد أنك تريد القيام بهذا الإجراء؟',
+    'confirmButtonText' => 'نعم',
+
+    // confirmation
+    'confirmation_yes' => 'نعم!',
+    'confirmation_no' => 'لا',
 ];

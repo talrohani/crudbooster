@@ -1,10 +1,10 @@
-<div class='form-group {{$header_group_class}} {{ ($errors->first($name))?"has-error":"" }}' id='form-group-{{$name}}' style="{{@$form['style']}}">
-    <label class='control-label col-sm-2'>{{$form['label']}}
+<div class='form-group no-margin no-padding {{$col_width?:'col-sm-10'}} {{$header_group_class}} {{ ($errors->first($name))?"has-error":"" }}' id='form-group-{{$name}}' style="{{@$form['style']}}">
+    <label class='control-label col-sm-12' style="text-align: start">{{$form['label']}}
         @if($required)
             <span class='text-danger' title='{!! cbLang('this_field_is_required') !!}'>*</span>
         @endif
     </label>
-    <div class="{{$col_width?:'col-sm-10'}}">
+    <div class="col-sm-12">
 
         @if(!$form['dataenum'] && !$form['datatable'] && !$form['dataquery'])
             <em>{{cbLang('there_is_no_option')}}</em>
@@ -27,8 +27,8 @@
                 }
 				$checked = ( ($value && in_array($val, $value)) || (CRUDBooster::isCreate() && ($k==0 && $form['validation'])) ) ? "checked" : "";
                 ?>
-                <div class=" {{$disabled}}">
-                    <label class='radio-inline'>
+                <div class="{{$disabled}} inline">
+                    <label class='radio-inline' style="margin-left:10px">
                         <input type="radio" {{$disabled}} {{$checked}} name="{{$name}}" value="{{$val}}"> {{$label}}
                     </label>
                 </div>
@@ -78,7 +78,7 @@
                 echo "
 											<div data-val='$val' class='input-radio-wrapper $disabled'>
 											  <label class='radio-inline'>
-											    <input type='radio' $disabled $checked name='".$name."' value='".$d->id."'> ".$val." 								    
+											    <input type='radio' $disabled $checked name='".$name."' value='".$d->id."'> ".$val."
 											  </label>
 											</div>";
             }
@@ -91,7 +91,7 @@
                     $checked = ($value == $q->value) ? "checked" : "";
                     echo "<div data-val='$val' class=' $disabled'>
 																<label class='radio-inline'>
-																	<input type='radio' $disabled $checked name='".$name."' value='$q->value'> ".$q->label."								    
+																	<input type='radio' $disabled $checked name='".$name."' value='$q->value'> ".$q->label."
 																</label>
 																</div>";
                 }

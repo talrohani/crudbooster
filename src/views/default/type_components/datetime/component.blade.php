@@ -1,12 +1,12 @@
-<div class='form-group form-datepicker {{$header_group_class}} {{ ($errors->first($name))?"has-error":"" }}' id='form-group-{{$name}}'
+<div class='form-group form-datepicker no-margin no-padding {{$col_width?:'col-sm-12'}}  {{$header_group_class}} {{ ($errors->first($name))?"has-error":"" }}' id='form-group-{{$name}}'
      style="{{@$form['style']}}">
-    <label class='control-label col-sm-2'>{{$form['label']}}
+    <label class='control-label col-sm-12' style="text-align: start">{{$form['label']}}
         @if($required)
             <span class='text-danger' title='{!! cbLang('this_field_is_required') !!}'>*</span>
         @endif
     </label>
 
-    <div class="{{$col_width?:'col-sm-10'}}">
+    <div class="col-sm-12">
         <div class="input-group">
 
             <span class="input-group-addon"><a href='javascript:void(0)' onclick='$("#{{$name}}").data("daterangepicker").toggle();'><i

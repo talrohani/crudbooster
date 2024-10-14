@@ -12,7 +12,8 @@
                 @if (in_array(App::getLocale(), ['ar', 'fa']))
                 rtl: true,
                 @endif
-                language: lang
+                language: lang,
+                autoclose: true
             });
 
             $('.open-datetimepicker').click(function () {

@@ -78,6 +78,7 @@
                 area: area
             }, function (response) {
                 $('#' + area).append(response.layout);
+                //$('#' + area).find("div.inner-box").css("direction","rtl");
                 $('#' + id).remove();
             })
         }
@@ -151,7 +152,7 @@
         }
 
         @endif
-        
+
         .connectedSortable {
             position: relative;
         }

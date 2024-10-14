@@ -1,10 +1,13 @@
 <?php namespace crocodicstudio\crudbooster\controllers;
 
 use CRUDBooster;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class AdminController extends CBController
 {
@@ -30,6 +33,16 @@ class AdminController extends CBController
         return view('crudbooster::lockscreen');
     }
 
+    public function changeLocale($locale): RedirectResponse
+    {
+        if (in_array($locale, ['en', 'ar'])) {
+            App::setLocale($locale); // Set the application locale
+            $locale = set_setting("language", $locale);
+            //Session::set('locale', $locale);
+        }
+        return redirect()->back(); // Redirect back to the previous page
+    }
+
     public function postUnlockScreen()
     {
         $id = CRUDBooster::myId();
@@ -51,27 +64,37 @@ class AdminController extends CBController
         if (CRUDBooster::myId()) {
             return redirect(CRUDBooster::adminPath());
         }
-
+        /*if(!session()->has('url.intended'))
+        {
+            session(['url.intended' => url()->previous()]);
+        }*/
         return view('crudbooster::login');
     }
 
     public function postLogin()
     {
-
-        $validator = Validator::make(Request::all(), [
-            'email' => 'required|email|exists:'.config('crudbooster.USER_TABLE'),
-            'password' => 'required',
-        ]);
+        $emailPattern = '/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b/';
+        $string = Request::input("email");
+        if (preg_match($emailPattern, $string)) {
+            $validator = Validator::make(Request::all(), [
+                'email' => 'required|email|exists:'.config('crudbooster.USER_TABLE'),
+                'password' => 'required',
+            ]);
+        }else{
+            $validator = Validator::make(Request::all(), [
+                'email' => 'required|exists:'.config('crudbooster.USER_TABLE').',username',
+                'password' => 'required',
+            ]);
+        }
 
         if ($validator->fails()) {
             $message = $validator->errors()->all();
-
             return redirect()->back()->with(['message' => implode(', ', $message), 'message_type' => 'danger']);
         }
 
         $email = Request::input("email");
         $password = Request::input("password");
-        $users = DB::table(config('crudbooster.USER_TABLE'))->where("email", $email)->first();
+        $users = DB::table(config('crudbooster.USER_TABLE'))->whereRaw("(email is not null and email='$email') OR (username is not null and username='$email')")->first();
 
         if (\Hash::check($password, $users->password)) {
             $priv = DB::table("cms_privileges")->where("id", $users->id_cms_privileges)->first();
@@ -95,6 +118,9 @@ class AdminController extends CBController
             $cb_hook_session = new \App\Http\Controllers\CBHook;
             $cb_hook_session->afterLogin();
 
+            /*return request()->session()->has('url.intended')
+                ? redirect()->intended(CRUDBooster::adminPath())
+                : redirect(CRUDBooster::adminPath());*/
             return redirect(CRUDBooster::adminPath());
         } else {
             return redirect()->route('getLogin')->with('message', cbLang('alert_password_wrong'));
